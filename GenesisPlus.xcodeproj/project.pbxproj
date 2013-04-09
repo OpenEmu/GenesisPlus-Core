@@ -150,6 +150,7 @@
 		941FF4F8162A4BAE005A9427 /* eeprom_spi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = eeprom_spi.h; sourceTree = "<group>"; };
 		941FF4FC162A4BE1005A9427 /* blip_buf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blip_buf.c; sourceTree = "<group>"; };
 		941FF4FD162A4BE1005A9427 /* blip_buf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = blip_buf.h; sourceTree = "<group>"; };
+		946C18AE17148D5200C64BF9 /* OESegaCDSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OESegaCDSystemResponderClient.h; path = "../OpenEmu/Sega CD/OESegaCDSystemResponderClient.h"; sourceTree = "<group>"; };
 		948DA2A115AB906400C0EA78 /* cd_cart.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cd_cart.c; sourceTree = "<group>"; };
 		948DA2A215AB906400C0EA78 /* cd_cart.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cd_cart.h; sourceTree = "<group>"; };
 		948DA2A315AB906400C0EA78 /* cdc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cdc.c; sourceTree = "<group>"; };
@@ -321,6 +322,7 @@
 				94ED896814CF933600FF8901 /* genplusgx_source */,
 				94ED8A8814CF933700FF8901 /* openemu */,
 				C6B948191365164700A425F0 /* OEGenesisSystemResponderClient.h */,
+				946C18AE17148D5200C64BF9 /* OESegaCDSystemResponderClient.h */,
 				82287C33101E9DB40072172D /* GenPlusGameCore.h */,
 				82287C34101E9DB40072172D /* GenPlusGameCore.m */,
 			);
