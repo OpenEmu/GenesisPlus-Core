@@ -44,6 +44,7 @@ typedef struct
     uint8 psgBoostNoise;
     uint8 dac_bits;
     uint8 ym2413;
+    uint8 mono;
     int16 psg_preamp;
     int16 fm_preamp;
     int16 lp_range;
@@ -58,37 +59,14 @@ typedef struct
     uint8 vdp_mode;
     uint8 force_dtack;
     uint8 addr_error;
-    uint8 tmss;
     uint8 bios;
     uint8 lock_on;
     uint8 hot_swap;
-    uint8 invert_mouse;
-    uint8 gun_cursor[2];
     uint8 overscan;
     uint8 gg_extra;
     uint8 ntsc;
-    uint8 vsync;
     uint8 render;
-    uint8 tv_mode;
-    uint8 bilinear;
-    uint8 aspect;
-    int16 xshift;
-    int16 yshift;
-    int16 xscale;
-    int16 yscale;
     t_input_config input[MAX_INPUTS];
-    uint16 pad_keymap[4][MAX_KEYS];
-    uint8 autoload;
-    uint8 autocheat;
-    uint8 s_auto;
-    uint8 s_default;
-    uint8 s_device;
-    uint8 l_device;
-    uint8 bg_overlay;
-    int16 screen_w;
-    float bgm_volume;
-    float sfx_volume;
-    char lastdir[4][2][MAXPATHLEN];
 } t_config;
 
 /* Global data */

@@ -3,7 +3,7 @@
  *  ROM Loading Support
  *
  *  Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2012  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2013  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -825,8 +825,8 @@ int load_rom(char *filename)
       old_system[1] = input.system[1];
     }
 
-    /* force MOUSE+MENACER configuration */
-    input.system[0] = SYSTEM_MOUSE;
+    /* force MENACER configuration */
+    input.system[0] = SYSTEM_MD_GAMEPAD;
     input.system[1] = SYSTEM_MENACER;
     input.x_offset = 68;
     input.y_offset = -24;

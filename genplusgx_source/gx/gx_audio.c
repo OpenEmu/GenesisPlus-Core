@@ -3,7 +3,7 @@
  *
  *  Genesis Plus GX audio support
  *
- *  Copyright Eke-Eke (2007-2012), based on original work from Softdev (2006)
+ *  Copyright Eke-Eke (2007-2013), based on original work from Softdev (2006)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -78,7 +78,7 @@ static void ai_callback(void)
   prevtime = current;
 #endif
 
-  audio_sync = 1;
+  audio_sync = 0;
 }
 
 /* AUDIO engine initialization */
@@ -128,7 +128,7 @@ void gx_audio_Shutdown(void)
  ***/
 int gx_audio_Update(void)
 {
-  if (audio_sync)
+  if (!audio_sync)
   {
     /* Current available soundbuffer */
     s16 *sb = (s16 *)(soundbuffer[mixbuffer]);
@@ -151,7 +151,7 @@ int gx_audio_Update(void)
     DCFlushRange((void *)sb, size);
     AUDIO_InitDMA((u32) sb, size);
     mixbuffer = (mixbuffer + 1) % SOUND_BUFFER_NUM;
-    audio_sync = 0;
+    audio_sync = 1;
 
     /* Start Audio DMA */
     /* this is called once to kick-off DMA from external memory to audio interface        */
@@ -200,7 +200,7 @@ void gx_audio_Start(void)
   memset(soundbuffer, 0, 3 * SOUND_BUFFER_LEN);
   audioStarted = 0;
   mixbuffer = 0;
-  audio_sync = 1;
+  audio_sync = 0;
 }
 
 /***

@@ -3,7 +3,7 @@
  *  Input peripherals support
  *
  *  Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2012  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2013  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -198,6 +198,13 @@ void input_init(void)
       break;
     }
 
+    case SYSTEM_XE_A1P:
+    {
+      input.dev[4] = DEVICE_XE_A1P;
+      player++;
+      break;
+    }
+
     case SYSTEM_MENACER:
     {
       input.dev[4] = DEVICE_LIGHTGUN;
@@ -305,19 +312,19 @@ void input_reset(void)
 
       case DEVICE_XE_A1P:
       {
-        xe_a1p_reset();
+        xe_a1p_reset(i);
         break;
       }
 
       case DEVICE_PADDLE:
       {
-        paddle_reset(i >> 2);
+        paddle_reset(i);
         break;
       }
 
       case DEVICE_SPORTSPAD:
       {
-        sportspad_reset(i >> 2);
+        sportspad_reset(i);
         break;
       }
 

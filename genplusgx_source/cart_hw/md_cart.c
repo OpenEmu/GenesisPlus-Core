@@ -42,11 +42,10 @@
  ****************************************************************************************/
 
 #include "shared.h"
-#include "eeprom_i2c.h"
 #include "eeprom_spi.h"
 #include "gamepad.h"
 
-#define CART_CNT (53)
+#define CART_CNT (54)
 
 /* Cart database entry */
 typedef struct
@@ -125,6 +124,8 @@ static const md_entry_t rom_database[CART_CNT] =
   {0x0000,0x507c,0x60,0x7f,{{0x00,0x00,0x00,0x00},{0xf00007,0xf00007,0xf00007,0xffffff},{0x600001,0x600003,0x600005,0x000000},0,1,NULL,NULL,default_regs_r,custom_regs_w}},
 /* Super King Kong 99 */
   {0x0000,0x7d6e,0x60,0x7f,{{0x00,0x00,0x00,0x00},{0xf00007,0xf00007,0xf00007,0xffffff},{0x600001,0x600003,0x600005,0x000000},0,1,NULL,NULL,default_regs_r,custom_regs_w}},
+/* Gunfight 3-in-1 */
+  {0x0000,0x6ff8,0x60,0x7f,{{0x00,0x00,0x00,0x00},{0xf00007,0xf00007,0xf00007,0xffffff},{0x600001,0x600003,0x600005,0x000000},0,1,NULL,NULL,default_regs_r,custom_regs_w}}, 
 /* Pokemon Stadium */
   {0x0000,0x843c,0x70,0x7f,{{0x00,0x00,0x00,0x00},{0xffffff,0xffffff,0xffffff,0xffffff},{0x000000,0x000000,0x000000,0x000000},0,1,NULL,NULL,NULL,custom_regs_w}},
 
@@ -355,27 +356,7 @@ void md_cart_init(void)
           BACKUP MEMORY 
   ***********************************************/
   sram_init();
-  eeprom_i2c_init();
   
-  if (sram.on)
-  {
-    /* static RAM only (64KB max.) */
-    if (!sram.custom)
-    {
-      /* disabled on startup if ROM is mapped in same area */
-      if (cart.romsize <= sram.start)
-      {
-        m68k.memory_map[sram.start >> 16].base    = sram.sram;
-        m68k.memory_map[sram.start >> 16].read8   = NULL;
-        m68k.memory_map[sram.start >> 16].read16  = NULL;
-        m68k.memory_map[sram.start >> 16].write8  = NULL;
-        m68k.memory_map[sram.start >> 16].write16 = NULL;
-        zbank_memory_map[sram.start >> 16].read   = NULL;
-        zbank_memory_map[sram.start >> 16].write  = NULL;
-      }
-    }
-  }
-
   /**********************************************
           SVP CHIP 
   ***********************************************/

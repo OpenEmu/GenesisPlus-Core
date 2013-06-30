@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  Sega Sports Pad support
  *
- *  Copyright (C) 2007-2011  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2013  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -46,10 +46,10 @@ static struct
 
 void sportspad_reset(int index)
 {
-  input.analog[index << 2][0] = 128;
-  input.analog[index << 2][1] = 128;
-  sportspad[index].State = 0x40;
-  sportspad[index].Counter = 0;
+  input.analog[index][0] = 128;
+  input.analog[index][1] = 128;
+  sportspad[index>>2].State = 0x40;
+  sportspad[index>>2].Counter = 0;
 }
 
 INLINE unsigned char sportspad_read(int port)

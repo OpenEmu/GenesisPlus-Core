@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  Sega Paddle Control support
  *
- *  Copyright (C) 2007-2011  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2013  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -45,8 +45,8 @@ static struct
 
 void paddle_reset(int index)
 {
-  input.analog[index << 2][0] = 128;
-  paddle[index].State = 0x40;
+  input.analog[index][0] = 128;
+  paddle[index>>2].State = 0x40;
 }
 
 INLINE unsigned char paddle_read(int port)

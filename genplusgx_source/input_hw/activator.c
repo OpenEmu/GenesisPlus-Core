@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  Sega Activator support
  *
- *  Copyright (C) 2011  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2011-2013  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -51,15 +51,15 @@ void activator_reset(int index)
   activator[index].Counter = 0;
 }
 
-INLINE unsigned char activator_read(int port)
+INLINE unsigned char activator_read(int index)
 {
   /* IR sensors 1-16 data (active low) */
-  uint16 data = ~input.pad[port << 2];
+  uint16 data = ~input.pad[index << 2];
 
   /* D1 = D0 (data is ready) */
-  uint8 temp = (activator[port].State & 0x01) << 1;
+  uint8 temp = (activator[index].State & 0x01) << 1;
 
-  switch (activator[port].Counter)
+  switch (activator[index].Counter)
   {
     case 0: /* x x x x 0 1 0 0 */
       temp |= 0x04;

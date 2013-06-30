@@ -3,7 +3,7 @@
  * 
  *   ROM File Browser
  *
- *  Copyright Eke-Eke (2009-2012)
+ *  Copyright Eke-Eke (2009-2013)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -484,7 +484,7 @@ int FileSelector(int type)
       if (selection < 0)
       {
         selection = maxfiles - 1;
-        offset = selection - 10 + 1;
+        offset = maxfiles - 10;
       }
       if (selection < offset)
         offset -= 10;
@@ -559,8 +559,12 @@ int FileSelector(int type)
           if ((filelist[i].flags) && !strcmp(prev_folder,filelist[i].filename))
           {
             selection = i;
-            offset = (i / 10) * 10;
-            i = maxfiles;
+            while (i  >= (offset + 10))
+            {
+              offset += 10;
+              if (offset > (maxfiles - 10)) offset = maxfiles - 10;
+            }
+            break;
           }
         }
       }
