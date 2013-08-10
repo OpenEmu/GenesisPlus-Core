@@ -26,6 +26,8 @@
 	<string>GenPlusGameCore</string>
 	<key>OEGameCorePlayerCount</key>
 	<string>2</string>
+	<key>OEGameCoreSupportsCheatCode</key>
+	<true/>
 	<key>OEProjectURL</key>
 	<string>http://code.google.com/p/genplus-gx</string>
 	<key>OESystemIdentifiers</key>

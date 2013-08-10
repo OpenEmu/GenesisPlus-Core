@@ -421,4 +421,14 @@ static void writeSaveFile(const char* path, int type)
     return YES;
 }
 
+- (void)setCheat:(NSString *)code setType:(NSString *)type setEnabled:(BOOL)enabled
+{
+    NSArray *multipleCodes = [[NSArray alloc] init];
+    multipleCodes = [code componentsSeparatedByString:@"+"];
+    
+    for (NSString *singleCode in multipleCodes) {
+        retro_cheat_set(nil, enabled, [singleCode UTF8String]);
+    }
+}
+
 @end
