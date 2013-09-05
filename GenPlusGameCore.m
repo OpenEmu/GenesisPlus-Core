@@ -365,55 +365,49 @@ static void writeSaveFile(const char* path, int type)
     return 2;
 }
 
-- (BOOL)saveStateToFileAtPath:(NSString *)fileName
-{   
+- (void)saveStateToFileAtPath:(NSString *)fileName completionHandler:(void (^)(BOOL, NSError *))block
+{
     int serial_size = retro_serialize_size();
-    uint8_t *serial_data = (uint8_t *) malloc(serial_size);
-    
-    retro_serialize(serial_data, serial_size);
-    
-    FILE *state_file = fopen([fileName UTF8String], "wb");
-    long bytes_written = fwrite(serial_data, sizeof(uint8_t), serial_size, state_file);
-    
-    free(serial_data);
-    
-    if( bytes_written != serial_size )
-    {
-        NSLog(@"Couldn't write state");
-        return NO;
-    }
-    fclose( state_file );
-    return YES;
+    NSMutableData *stateData = [NSMutableData dataWithLength:serial_size];
+
+    retro_serialize([stateData mutableBytes], serial_size);
+
+    __autoreleasing NSError *error = nil;
+    BOOL success = [stateData writeToFile:fileName options:NSDataWritingAtomic error:&error];
+
+    block(success, success ? nil : error);
 }
 
-- (BOOL)loadStateFromFileAtPath:(NSString *)fileName
+- (void)loadStateFromFileAtPath:(NSString *)fileName completionHandler:(void (^)(BOOL, NSError *))block
 {
-    FILE *state_file = fopen([fileName UTF8String], "rb");
-    if( !state_file )
+    __autoreleasing NSError *error = nil;
+    NSData *data = [NSData dataWithContentsOfFile:fileName options:NSDataReadingMappedIfSafe | NSDataReadingUncached error:&error];
+
+    if(data == nil)
     {
-        NSLog(@"Could not open state file");
-        return NO;
+        block(NO, error);
+        return;
     }
-    
+
     int serial_size = retro_serialize_size();
-    uint8_t *serial_data = (uint8_t *) malloc(serial_size);
-    
-    if(!fread(serial_data, sizeof(uint8_t), serial_size, state_file))
+    if(serial_size != [data length])
     {
-        NSLog(@"Couldn't read file");
-        return NO;
+        // FIXME: Provide constants for error handling in OpenEmu SDK.
+        NSError *error = [NSError errorWithDomain:@"org.openemu.GameCore.Load" code:-10 userInfo:
+                          @{ NSLocalizedDescriptionKey : [NSString stringWithFormat:@"The size of the file %@ does not have the right size, %d expected, got: %ld.", fileName, serial_size, [data length]] }];
+        block(NO, error);
+        return;
     }
-    fclose(state_file);
-    
-    if(!retro_unserialize(serial_data, serial_size))
+
+    if(!retro_unserialize([data bytes], serial_size))
     {
-        NSLog(@"Couldn't unpack state");
-        return NO;
+        NSError *error = [NSError errorWithDomain:@"org.openemu.GameCore.Load" code:-10 userInfo:
+                          @{ NSLocalizedDescriptionKey : [NSString stringWithFormat:@"Could not read the file state in %@.", fileName] }];
+        block(NO, error);
+        return;
     }
     
-    free(serial_data);
-    
-    return YES;
+    block(YES, nil);
 }
 
 - (void)setCheat:(NSString *)code setType:(NSString *)type setEnabled:(BOOL)enabled
