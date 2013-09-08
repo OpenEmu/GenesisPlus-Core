@@ -45,22 +45,30 @@
 
 NSUInteger GenesisEmulatorValues[] = { RETRO_DEVICE_ID_JOYPAD_UP, RETRO_DEVICE_ID_JOYPAD_DOWN, RETRO_DEVICE_ID_JOYPAD_LEFT, RETRO_DEVICE_ID_JOYPAD_RIGHT, RETRO_DEVICE_ID_JOYPAD_Y, RETRO_DEVICE_ID_JOYPAD_B, RETRO_DEVICE_ID_JOYPAD_A, RETRO_DEVICE_ID_JOYPAD_L, RETRO_DEVICE_ID_JOYPAD_X, RETRO_DEVICE_ID_JOYPAD_R, RETRO_DEVICE_ID_JOYPAD_START, RETRO_DEVICE_ID_JOYPAD_SELECT };
 
-GenPlusGameCore *current;
+static __weak GenPlusGameCore *_current;
+
 @implementation GenPlusGameCore
 
 static void audio_callback(int16_t left, int16_t right)
 {
+    GET_CURRENT_AND_RETURN();
+
 	[[current ringBufferAtIndex:0] write:&left maxLength:2];
     [[current ringBufferAtIndex:0] write:&right maxLength:2];
 }
 
-static size_t audio_batch_callback(const int16_t *data, size_t frames){
+static size_t audio_batch_callback(const int16_t *data, size_t frames)
+{
+    GET_CURRENT_AND_RETURN(frames);
+
     [[current ringBufferAtIndex:0] write:data maxLength:frames << 2];
     return frames;
 }
 
 static void video_callback(const void *data, unsigned width, unsigned height, size_t pitch)
 {
+    GET_CURRENT_AND_RETURN();
+
     current->videoWidth  = width;
     current->videoHeight = height;
     
@@ -81,6 +89,8 @@ static void input_poll_callback(void)
 
 static int16_t input_state_callback(unsigned port, unsigned device, unsigned index, unsigned _id)
 {
+    GET_CURRENT_AND_RETURN(0);
+
     //NSLog(@"polled input: port: %d device: %d id: %d", port, device, id);
     
     if (port == 0 & device == RETRO_DEVICE_JOYPAD) {
@@ -197,7 +207,7 @@ static void writeSaveFile(const char* path, int type)
         videoBuffer = (uint16_t*)malloc(720 * 576 * 2);
     }
     
-	current = self;
+	_current = self;
     
 	return self;
 }
@@ -266,8 +276,8 @@ static void writeSaveFile(const char* path, int type)
         struct retro_system_av_info info;
         retro_get_system_av_info(&info);
         
-        current->frameInterval = info.timing.fps;
-        current->sampleRate = info.timing.sample_rate;
+        frameInterval = info.timing.fps;
+        sampleRate = info.timing.sample_rate;
         
         //retro_set_controller_port_device(SNES_PORT_1, RETRO_DEVICE_JOYPAD);
         
@@ -289,7 +299,7 @@ static void writeSaveFile(const char* path, int type)
 
 - (OEIntRect)screenRect
 {
-    return OEIntRectMake(0, 0, current->videoWidth, current->videoHeight);
+    return OEIntRectMake(0, 0, videoWidth, videoHeight);
 }
 
 - (OEIntSize)bufferSize
@@ -312,7 +322,6 @@ static void writeSaveFile(const char* path, int type)
     
     if([batterySavesDirectory length] != 0)
     {
-        
         [[NSFileManager defaultManager] createDirectoryAtPath:batterySavesDirectory withIntermediateDirectories:YES attributes:nil error:NULL];
         
         NSLog(@"Trying to save SRAM");
