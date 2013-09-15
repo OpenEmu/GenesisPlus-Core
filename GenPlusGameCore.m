@@ -379,7 +379,15 @@ static void writeSaveFile(const char* path, int type)
     int serial_size = retro_serialize_size();
     NSMutableData *stateData = [NSMutableData dataWithLength:serial_size];
 
-    retro_serialize([stateData mutableBytes], serial_size);
+    if(!retro_serialize([stateData mutableBytes], serial_size))
+    {
+        NSError *error = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreCouldNotSaveStateError userInfo:@{
+            NSLocalizedDescriptionKey : @"Save state data could not be written",
+            NSLocalizedRecoverySuggestionErrorKey : @"The emulator could not write the state data."
+        }];
+        block(NO, error);
+        return;
+    }
 
     __autoreleasing NSError *error = nil;
     BOOL success = [stateData writeToFile:fileName options:NSDataWritingAtomic error:&error];
@@ -401,17 +409,20 @@ static void writeSaveFile(const char* path, int type)
     int serial_size = retro_serialize_size();
     if(serial_size != [data length])
     {
-        // FIXME: Provide constants for error handling in OpenEmu SDK.
-        NSError *error = [NSError errorWithDomain:@"org.openemu.GameCore.Load" code:-10 userInfo:
-                          @{ NSLocalizedDescriptionKey : [NSString stringWithFormat:@"The size of the file %@ does not have the right size, %d expected, got: %ld.", fileName, serial_size, [data length]] }];
+        NSError *error = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreStateHasWrongSizeError userInfo:@{
+            NSLocalizedDescriptionKey : @"Save state has wrong file size.",
+            NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The size of the file %@ does not have the right size, %d expected, got: %ld.", fileName, serial_size, [data length]],
+        }];
         block(NO, error);
         return;
     }
 
     if(!retro_unserialize([data bytes], serial_size))
     {
-        NSError *error = [NSError errorWithDomain:@"org.openemu.GameCore.Load" code:-10 userInfo:
-                          @{ NSLocalizedDescriptionKey : [NSString stringWithFormat:@"Could not read the file state in %@.", fileName] }];
+        NSError *error = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreCouldNotLoadStateError userInfo:@{
+            NSLocalizedDescriptionKey : @"The save state data could not be read",
+            NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"Could not read the file state in %@.", fileName]
+        }];
         block(NO, error);
         return;
     }
