@@ -186,21 +186,31 @@ static void bram_write_word(unsigned int address, unsigned int data)
 /* PCM chip & Gate-Array area                                               */
 /*--------------------------------------------------------------------------*/
 
-static void s68k_poll_detect(reg)
+static void s68k_poll_detect(unsigned int reg_mask)
 {
   /* detect SUB-CPU register polling */
-  if (s68k.poll.detected == (1 << reg))
+  if (s68k.poll.detected & reg_mask)
   {
     if (s68k.cycles <= s68k.poll.cycle)
     {
       if (s68k.pc == s68k.poll.pc)
       {
-        /* stop SUB-CPU until register is modified by MAIN-CPU */
+        /* SUB-CPU polling confirmed ? */
+        if (s68k.poll.detected & 1)
+        {
+          /* idle SUB-CPU until register is modified */
+          s68k.cycles = s68k.cycle_end;
+          s68k.stopped = reg_mask;
 #ifdef LOG_SCD
-        error("s68k stopped from %d cycles\n", s68k.cycles);
+          error("s68k stopped from %d cycles\n", s68k.cycles);
 #endif
-        s68k.cycles = s68k.cycle_end;
-        s68k.stopped = 1 << reg;
+        }
+        else
+        {
+          /* confirm SUB-CPU polling */
+          s68k.poll.detected |= 1;
+          s68k.poll.cycle = s68k.cycles + 392;
+        }
       }
       return;
     }
@@ -208,27 +218,27 @@ static void s68k_poll_detect(reg)
   else
   {
     /* set SUB-CPU register access flag */
-    s68k.poll.detected = 1 << reg;
+    s68k.poll.detected = reg_mask;
   }
 
-  /* restart SUB-CPU polling detection */
+  /* reset SUB-CPU polling detection */
   s68k.poll.cycle = s68k.cycles + 392;
   s68k.poll.pc = s68k.pc;
 }
 
-static void s68k_poll_sync(reg)
+static void s68k_poll_sync(unsigned int reg_mask)
 {
   /* relative MAIN-CPU cycle counter */
   unsigned int cycles = (s68k.cycles * MCYCLES_PER_LINE) / SCYCLES_PER_LINE;
 
   /* sync MAIN-CPU with SUB-CPU */
-  if (!m68k.stopped && (m68k.cycles < cycles))
+  if (!m68k.stopped)
   {
     m68k_run(cycles);
   }
 
-  /* MAIN-CPU stopped on register polling ? */
-  if (m68k.stopped & (3 << reg))
+  /* MAIN-CPU idle on register polling ? */
+  if (m68k.stopped & reg_mask)
   {
     /* sync MAIN-CPU with SUB-CPU */
     m68k.cycles = cycles;
@@ -240,9 +250,9 @@ static void s68k_poll_sync(reg)
 #endif
   }
 
-  /* clear CPU register(s) access flags */
-  m68k.poll.detected &= ~(3 << reg);
-  s68k.poll.detected &= ~(3 << reg);
+  /* clear CPU register access flags */
+  s68k.poll.detected &= ~reg_mask;
+  m68k.poll.detected &= ~reg_mask;
 }
 
 static unsigned int scd_read_byte(unsigned int address)
@@ -266,15 +276,29 @@ static unsigned int scd_read_byte(unsigned int address)
   /* Memory Mode */
   if (address == 0xff8003)
   {
-    s68k_poll_detect(0x03);
+    s68k_poll_detect(1<<0x03);
     return scd.regs[0x03>>1].byte.l;
   }
 
   /* MAIN-CPU communication flags */
   if (address == 0xff800e)
   {
-    s68k_poll_detect(0x0e);
+    s68k_poll_detect(1<<0x0e);
     return scd.regs[0x0e>>1].byte.h;
+  }
+
+  /* CDC transfer status */
+  if (address == 0xff8004)
+  {
+    s68k_poll_detect(1<<0x04);
+    return scd.regs[0x04>>1].byte.h;
+  }
+
+  /* GFX operation status */
+  if (address == 0xff8058)
+  {
+    s68k_poll_detect(1<<0x08);
+    return scd.regs[0x58>>1].byte.h;
   }
 
   /* CDC register data (controlled by BIOS, byte access only ?) */
@@ -328,7 +352,7 @@ static unsigned int scd_read_byte(unsigned int address)
   /* MAIN-CPU communication words */
   if ((address & 0x1f0) == 0x10)
   {
-    s68k_poll_detect(address & 0x1f);
+    s68k_poll_detect(1 << (address & 0x1f));
   }
 
   /* default registers */
@@ -358,7 +382,7 @@ static unsigned int scd_read_word(unsigned int address)
   /* Memory Mode */
   if (address == 0xff8002)
   {
-    s68k_poll_detect(0x03);
+    s68k_poll_detect(1<<0x03);
     return scd.regs[0x03>>1].w;
   }
 
@@ -409,16 +433,16 @@ static unsigned int scd_read_word(unsigned int address)
   /* MAIN-CPU communication words */
   if ((address & 0x1f0) == 0x10)
   {
-    /* relative MAIN-CPU cycle counter */
-    unsigned int cycles = (s68k.cycles * MCYCLES_PER_LINE) / SCYCLES_PER_LINE;
-
-    /* sync MAIN-CPU with SUB-CPU (Mighty Morphin Power Rangers) */
-    if (!m68k.stopped && (m68k.cycles < cycles))
+    if (!m68k.stopped)
     {
+      /* relative MAIN-CPU cycle counter */
+      unsigned int cycles = (s68k.cycles * MCYCLES_PER_LINE) / SCYCLES_PER_LINE;
+
+      /* sync MAIN-CPU with SUB-CPU (Mighty Morphin Power Rangers) */
       m68k_run(cycles);
     }
 
-    s68k_poll_detect(address & 0x1e);
+    s68k_poll_detect(3 << (address & 0x1e));
   }
 
   /* default registers */
@@ -526,7 +550,7 @@ static void scd_write_byte(unsigned int address, unsigned int data)
 
     case 0x03: /* Memory Mode */
     {
-      s68k_poll_sync(0x02);
+      s68k_poll_sync(1<<0x03);
 
       /* detect MODE & RET bits modifications */
       if ((data ^ scd.regs[0x03 >> 1].byte.l) & 0x05)
@@ -679,15 +703,10 @@ static void scd_write_byte(unsigned int address, unsigned int data)
       return;
     }
 
-    case 0x0e: /* MAIN-CPU communication flags, normally read-only (Space Ace, Dragon's Lair) */
+    case 0x0e:  /* SUB-CPU communication flags */
+    case 0x0f:  /* !LWR is ignored (Space Ace, Dragon's Lair) */
     {
-      /* ROR8 operation */
-      data = (data >> 1) | ((data << 7) & 1);
-    }
-
-    case 0x0f:  /* SUB-CPU communication flags */
-    {
-      s68k_poll_sync(0x0e);
+      s68k_poll_sync(1<<0x0f);
       scd.regs[0x0f>>1].byte.l = data;
       return;
     }
@@ -715,7 +734,10 @@ static void scd_write_byte(unsigned int address, unsigned int data)
 
       /* update IEN2 flag */
       scd.regs[0x00].byte.h = (scd.regs[0x00].byte.h & 0x7f) | ((data & 0x04) << 5);
-      
+
+      /* clear level 1 interrupt if disabled ("Batman Returns" option menu) */
+      scd.pending &= ~(data & 0x02);
+
       /* update IRQ level */
       s68k_update_irq((scd.pending & data) >> 1);
       return;
@@ -748,7 +770,7 @@ static void scd_write_byte(unsigned int address, unsigned int data)
       /* SUB-CPU communication words */
       if ((address & 0xf0) == 0x20)
       {
-        s68k_poll_sync((address - 0x10) & 0x1e);
+        s68k_poll_sync(1 << ((address - 0x10) & 0x1f));
       }
 
       /* default registers */
@@ -799,7 +821,7 @@ static void scd_write_word(unsigned int address, unsigned int data)
 
     case 0x02: /* Memory Mode */
     {
-      s68k_poll_sync(0x02);
+      s68k_poll_sync(1<<0x03);
 
       /* detect MODE & RET bits modifications */
       if ((data ^ scd.regs[0x03>>1].byte.l) & 0x05)
@@ -963,12 +985,12 @@ static void scd_write_word(unsigned int address, unsigned int data)
       return;
     }
 
-    case 0x0e:  /* SUB-CPU communication flags */
+    case 0x0e:  /* CPU Communication flags */
     {
-      s68k_poll_sync(0x0e);
+      s68k_poll_sync(1<<0x0f);
 
-      /* MSB is read-only */
-      scd.regs[0x0f>>1].byte.l = data;
+      /* D8-D15 ignored -> only SUB-CPU flags are updated */
+      scd.regs[0x0f>>1].byte.l = data & 0xff;
       return;
     }
 
@@ -1001,6 +1023,9 @@ static void scd_write_word(unsigned int address, unsigned int data)
 
       /* update IEN2 flag */
       scd.regs[0x00].byte.h = (scd.regs[0x00].byte.h & 0x7f) | ((data & 0x04) << 5);
+
+      /* clear pending level 1 interrupt if disabled ("Batman Returns" option menu) */
+      scd.pending &= ~(data & 0x02);
       
       /* update IRQ level */
       s68k_update_irq((scd.pending & data) >> 1);
@@ -1032,7 +1057,7 @@ static void scd_write_word(unsigned int address, unsigned int data)
       /* SUB-CPU communication words */
       if ((address & 0xf0) == 0x20)
       {
-        s68k_poll_sync((address - 0x10) & 0x1e);
+        s68k_poll_sync(3 << ((address - 0x10) & 0x1e));
       }
 
       /* default registers */
@@ -1193,6 +1218,11 @@ void scd_reset(int hard)
       m68k.memory_map[i].base = scd.prg_ram;
       m68k.memory_map[i+1].base = scd.prg_ram + 0x10000;
     }
+
+    /* reset & halt SUB-CPU */
+    s68k.cycles = 0;
+    s68k_pulse_reset();
+    s68k_pulse_halt();
   }
   else
   {

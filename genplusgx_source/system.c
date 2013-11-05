@@ -357,7 +357,7 @@ void system_frame_gen(int do_skip)
 
   /* reset VDP FIFO */
   fifo_write_cnt = 0;
-  fifo_lastwrite = 0;
+  fifo_slots = 0;
 
   /* update 6-Buttons & Lightguns */
   input_refresh();
@@ -404,11 +404,23 @@ void system_frame_gen(int do_skip)
     /* active screen height */
     if (reg[1] & 0x04)
     {
-      bitmap.viewport.h = 224 + ((reg[1] & 0x08) << 1);
-      bitmap.viewport.y = (config.overscan & 1) * ((240 + 48*vdp_pal - bitmap.viewport.h) >> 1);
+      /* Mode 5 */
+      if (reg[1] & 0x08)
+      {
+        /* 240 active lines */
+        bitmap.viewport.h = 240;
+        bitmap.viewport.y = (config.overscan & 1) * 24 * vdp_pal;
+      }
+      else
+      {
+        /* 224 active lines */
+        bitmap.viewport.h = 224;
+        bitmap.viewport.y = (config.overscan & 1) * (8 + (24 * vdp_pal));
+      }
     }
     else
     {
+      /* Mode 4 (192 active lines) */
       bitmap.viewport.h = 192;
       bitmap.viewport.y = (config.overscan & 1) * 24 * (vdp_pal + 1);
     }
@@ -703,7 +715,7 @@ void system_frame_scd(int do_skip)
 
   /* reset VDP FIFO */
   fifo_write_cnt = 0;
-  fifo_lastwrite = 0;
+  fifo_slots = 0;
 
   /* update 6-Buttons & Lightguns */
   input_refresh();
@@ -1032,7 +1044,7 @@ void system_frame_sms(int do_skip)
 
   /* reset VDP FIFO */
   fifo_write_cnt = 0;
-  fifo_lastwrite = 0;
+  fifo_slots = 0;
 
   /* update 6-Buttons & Lightguns */
   input_refresh();
@@ -1125,7 +1137,7 @@ void system_frame_sms(int do_skip)
   }
 
   /* Detect pause button input (in Game Gear Mode, NMI is not generated) */
-  if ((system_hw != SYSTEM_GG) && (system_hw != SYSTEM_SG))
+  if (system_hw != SYSTEM_GG)
   {
     if (input.pad[0] & INPUT_START)
     {
@@ -1172,7 +1184,7 @@ void system_frame_sms(int do_skip)
     /* Sprites are still processed during vertical borders */
     if (reg[1] & 0x40)
     {
-      render_obj(bitmap.viewport.w);
+      render_obj(1);
     }
   }
 
@@ -1349,7 +1361,7 @@ void system_frame_sms(int do_skip)
     if ((system_hw < SYSTEM_MD) && (line > (lines_per_frame - 16)))
     {
       /* Sprites are still processed during top border */
-      render_obj(bitmap.viewport.w);
+      render_obj((line - lines_per_frame) & 1);
       parse_satb(line - lines_per_frame);
     }
 

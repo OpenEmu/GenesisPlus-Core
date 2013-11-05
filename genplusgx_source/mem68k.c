@@ -223,28 +223,31 @@ void z80_write_word(unsigned int address, unsigned int data)
 /* I/O Control                                                              */
 /*--------------------------------------------------------------------------*/
 
-static void m68k_poll_detect(reg)
+static void m68k_poll_detect(unsigned int reg_mask)
 {
   /* detect MAIN-CPU register polling */
-  if (m68k.poll.detected == (1 << reg))
+  if (m68k.poll.detected & reg_mask)
   {
     if (m68k.cycles <= m68k.poll.cycle)
     {
       if (m68k.pc == m68k.poll.pc)
       {
-        /* stop MAIN-CPU until register is modified by SUB-CPU */
-#ifdef LOG_SCD
-        error("m68k stopped from %d cycles\n", m68k.cycles);
-#endif
-        m68k.cycles = m68k.cycle_end;
-        m68k.stopped = 1 << reg;
-
-        /* return to current instruction */
-        do
+        /* MAIN-CPU polling confirmed ? */
+        if (m68k.poll.detected & 1)
         {
-          m68k.pc -= 2;
+          /* idle MAIN-CPU until register is modified */
+          m68k.cycles = m68k.cycle_end;
+          m68k.stopped = reg_mask;
+#ifdef LOG_SCD
+          error("m68k stopped from %d cycles\n", m68k.cycles);
+#endif
         }
-        while (m68k.ir != *(uint16 *)(m68k.memory_map[(m68k.pc>>16)&0xff].base + (m68k.pc & 0xffff)));
+        else
+        {
+          /* confirm MAIN-CPU polling */
+          m68k.poll.detected |= 1;
+          m68k.poll.cycle = m68k.cycles + 840;
+        }
       }
       return;
     }
@@ -252,27 +255,27 @@ static void m68k_poll_detect(reg)
   else
   {
     /* set MAIN-CPU register access flag */
-    m68k.poll.detected = 1 << reg;
+    m68k.poll.detected = reg_mask;
   }
 
-  /* restart MAIN-CPU polling detection */
+  /* reset MAIN-CPU polling detection */
   m68k.poll.cycle = m68k.cycles + 840;
   m68k.poll.pc = m68k.pc;
 }
 
-static void m68k_poll_sync(reg)
+static void m68k_poll_sync(unsigned int reg_mask)
 {
   /* relative SUB-CPU cycle counter */
   unsigned int cycles = (m68k.cycles * SCYCLES_PER_LINE) / MCYCLES_PER_LINE;
 
   /* sync SUB-CPU with MAIN-CPU */
-  if (!s68k.stopped && (s68k.cycles < cycles))
+  if (!s68k.stopped)
   {
     s68k_run(cycles);
   }
 
-  /* SUB-CPU stopped on register polling ? */
-  if (s68k.stopped & (3 << reg))
+  /* SUB-CPU idle on register polling ? */
+  if (s68k.stopped & reg_mask)
   {
     /* sync SUB-CPU with MAIN-CPU */
     s68k.cycles = cycles;
@@ -284,9 +287,9 @@ static void m68k_poll_sync(reg)
 #endif
   }
 
-  /* clear CPU register(s) access flags */
-  m68k.poll.detected &= ~(3 << reg);
-  s68k.poll.detected &= ~(3 << reg);
+  /* clear CPU register access flags */
+  s68k.poll.detected &= ~reg_mask;
+  m68k.poll.detected &= ~reg_mask;
 }
 
 unsigned int ctrl_io_read_byte(unsigned int address)
@@ -335,23 +338,23 @@ unsigned int ctrl_io_read_byte(unsigned int address)
         /* Memory Mode */
         if (index == 0x03)
         {
-          m68k_poll_detect(0x03);
+          m68k_poll_detect(1<<0x03);
           return scd.regs[0x03>>1].byte.l;
         }
 
         /* SUB-CPU communication flags */
         if (index == 0x0f)
         {
-          /* relative SUB-CPU cycle counter */
-          unsigned int cycles = (m68k.cycles * SCYCLES_PER_LINE) / MCYCLES_PER_LINE;
-
-          /* sync SUB-CPU with MAIN-CPU (Dracula Unleashed w/ Sega CD Model 2 OS ROM) */
-          if (!s68k.stopped && (s68k.cycles < cycles))
+          if (!s68k.stopped)
           {
+            /* relative SUB-CPU cycle counter */
+            unsigned int cycles = (m68k.cycles * SCYCLES_PER_LINE) / MCYCLES_PER_LINE;
+
+            /* sync SUB-CPU with MAIN-CPU (Dracula Unleashed w/ Sega CD Model 2 Boot ROM) */
             s68k_run(cycles);
           }
 
-          m68k_poll_detect(0x0f);
+          m68k_poll_detect(1<<0x0f);
           return scd.regs[0x0f>>1].byte.l;
         }
 
@@ -361,7 +364,7 @@ unsigned int ctrl_io_read_byte(unsigned int address)
           /* SUB-CPU communication words */
           if (index >= 0x20)
           {
-            m68k_poll_detect(index - 0x10);
+            m68k_poll_detect(1 << (index - 0x10));
           }
 
           /* register LSB */
@@ -466,7 +469,7 @@ unsigned int ctrl_io_read_word(unsigned int address)
         /* Memory Mode */
         if (index == 0x02)
         {
-          m68k_poll_detect(0x03);
+          m68k_poll_detect(1<<0x03);
           return scd.regs[0x03>>1].w;
         }
 
@@ -498,7 +501,16 @@ unsigned int ctrl_io_read_word(unsigned int address)
           /* SUB-CPU communication words */
           if (index >= 0x20)
           {
-            m68k_poll_detect(index - 0x10);
+            if (!s68k.stopped)
+            {
+              /* relative SUB-CPU cycle counter */
+              unsigned int cycles = (m68k.cycles * SCYCLES_PER_LINE) / MCYCLES_PER_LINE;
+
+              /* sync SUB-CPU with MAIN-CPU (Soul Star) */
+              s68k_run(cycles);
+            }
+
+            m68k_poll_detect(3 << (index - 0x10));
           }
           
           return scd.regs[index >> 1].w;
@@ -608,12 +620,12 @@ void ctrl_io_write_byte(unsigned int address, unsigned int data)
               /* level 2 interrupt enabled ? */
               if (scd.regs[0x32>>1].byte.l & 0x04)
               {
-                /* relative SUB-CPU cycle counter */
-                unsigned int cycles = (m68k.cycles * SCYCLES_PER_LINE) / MCYCLES_PER_LINE;
-
-                /* sync SUB-CPU with MAIN-CPU */
-                if (!s68k.stopped && (s68k.cycles < cycles))
+                if (!s68k.stopped)
                 {
+                  /* relative SUB-CPU cycle counter */
+                  unsigned int cycles = (m68k.cycles * SCYCLES_PER_LINE) / MCYCLES_PER_LINE;
+
+                  /* sync SUB-CPU with MAIN-CPU (Earnest Evans, Fhey Area) */
                   s68k_run(cycles);
                 }
 
@@ -674,7 +686,7 @@ void ctrl_io_write_byte(unsigned int address, unsigned int data)
 
           case 0x03:  /* Memory mode */
           {
-            m68k_poll_sync(0x02);
+            m68k_poll_sync(1<<0x03);
 
             /* PRG-RAM 128k bank mapped to $020000-$03FFFF (resp. $420000-$43FFFF) */
             m68k.memory_map[scd.cartridge.boot + 0x02].base = scd.prg_ram + ((data & 0xc0) << 11);
@@ -718,15 +730,10 @@ void ctrl_io_write_byte(unsigned int address, unsigned int data)
             return;
           }
 
-          case 0x0f:  /* SUB-CPU communication flags, normally read-only (Space Ace, Dragon's Lair) */
+          case 0x0e: /* MAIN-CPU communication flags */
+          case 0x0f: /* !LWR is ignored (Space Ace, Dragon's Lair) */
           {
-            /* ROL8 operation */
-            data = (data << 1) | ((data >> 7) & 1);
-          }
-
-          case 0x0e:  /* MAIN-CPU communication flags */
-          {
-            m68k_poll_sync(0x0e);
+            m68k_poll_sync(1<<0x0e);
             scd.regs[0x0e>>1].byte.h = data;
             return;
           }
@@ -736,7 +743,7 @@ void ctrl_io_write_byte(unsigned int address, unsigned int data)
             /* MAIN-CPU communication words */
             if ((address & 0x30) == 0x10)
             {
-              m68k_poll_sync(address & 0x1e);
+              m68k_poll_sync(1 << (address & 0x1f));
 
               /* register LSB */
               if (address & 1)
@@ -887,7 +894,7 @@ void ctrl_io_write_word(unsigned int address, unsigned int data)
 
           case 0x02:  /* Memory Mode */
           {
-            m68k_poll_sync(0x02);
+            m68k_poll_sync(1<<0x03);
 
             /* PRG-RAM 128k bank mapped to $020000-$03FFFF (resp. $420000-$43FFFF) */
             m68k.memory_map[scd.cartridge.boot + 0x02].base = scd.prg_ram + ((data & 0xc0) << 11);
@@ -937,12 +944,12 @@ void ctrl_io_write_word(unsigned int address, unsigned int data)
             return;
           }
 
-          case 0x0e:  /* MAIN-CPU communication flags */
+          case 0x0e:  /* CPU communication flags */
           {
-            m68k_poll_sync(0x0e);
+            m68k_poll_sync(1<<0x0e);
 
-            /* LSB is read-only (Mortal Kombat) */
-            scd.regs[0x0e>>1].byte.h = data;
+      		/* D8-D15 ignored -> only MAIN-CPU flags are updated (Mortal Kombat) */
+            scd.regs[0x0e>>1].byte.h = data & 0xff;
             return;
           }
 
@@ -951,7 +958,7 @@ void ctrl_io_write_word(unsigned int address, unsigned int data)
             /* MAIN-CPU communication words */
             if ((address & 0x30) == 0x10)
             {
-              m68k_poll_sync(address & 0x1e);
+              m68k_poll_sync(3 << (address & 0x1e));
               scd.regs[(address >> 1) & 0xff].w = data;
               return;
             }
