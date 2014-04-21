@@ -124,7 +124,7 @@ static const uint8 shift_table[]        = { 6, 7, 0, 8 };
 static const uint8 col_mask_table[]     = { 0x0F, 0x1F, 0x0F, 0x3F };
 static const uint16 row_mask_table[]    = { 0x0FF, 0x1FF, 0x2FF, 0x3FF };
 
-static uint8 border;          /* Border color index */
+static uint8 bordrr;          /* Border color index */
 static uint8 pending;         /* Pending write flag */
 static uint8 code;            /* Code register */
 static uint8 dma_type;        /* DMA mode */
@@ -218,7 +218,7 @@ void vdp_reset(void)
   addr_latch      = 0;
   code            = 0;
   pending         = 0;
-  border          = 0;
+  bordrr          = 0;
   hint_pending    = 0;
   vint_pending    = 0;
   dmafill         = 0;
@@ -517,7 +517,7 @@ int vdp_context_load(uint8 *state, uint8 version)
     bg_list_index = 0x800;
 
     /* reinitialize palette */
-    color_update_m5(0, *(uint16 *)&cram[border << 1]);
+    color_update_m5(0, *(uint16 *)&cram[bordrr << 1]);
     for(i = 1; i < 0x40; i++)
     {
       color_update_m5(i, *(uint16 *)&cram[i << 1]);
@@ -533,7 +533,7 @@ int vdp_context_load(uint8 *state, uint8 version)
     {
       color_update_m4(i, *(uint16 *)&cram[i << 1]);
     }
-    color_update_m4(0x40, *(uint16 *)&cram[(0x10 | (border & 0x0F)) << 1]);
+    color_update_m4(0x40, *(uint16 *)&cram[(0x10 | (bordrr & 0x0F)) << 1]);
   }
 
   /* invalidate cache */
@@ -1137,7 +1137,7 @@ void vdp_sms_ctrl_w(unsigned int data)
           {
             color_update_m4(i, *(uint16 *)&cram[i << 1]);
           }
-          color_update_m4(0x40, *(uint16 *)&cram[(0x10 | (border & 0x0F)) << 1]);
+          color_update_m4(0x40, *(uint16 *)&cram[(0x10 | (bordrr & 0x0F)) << 1]);
         }
       }
     }
@@ -1583,7 +1583,7 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
           if (reg[1] & 0x04)
           {
             /* Mode 5 */
-            color_update_m5(0x00, *(uint16 *)&cram[border << 1]);
+            color_update_m5(0x00, *(uint16 *)&cram[bordrr << 1]);
             for (i = 1; i < 0x40; i++)
             {
               color_update_m5(i, *(uint16 *)&cram[i << 1]);
@@ -1596,7 +1596,7 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
             {
               color_update_m4(i, *(uint16 *)&cram[i << 1]);
             }
-            color_update_m4(0x40, *(uint16 *)&cram[(0x10 | (border & 0x0F)) << 1]);
+            color_update_m4(0x40, *(uint16 *)&cram[(0x10 | (bordrr & 0x0F)) << 1]);
           }
         }
       }
@@ -1749,7 +1749,7 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
             }
 
             /* Reset color palette */
-            color_update_m5(0x00, *(uint16 *)&cram[border << 1]);
+            color_update_m5(0x00, *(uint16 *)&cram[bordrr << 1]);
             for (i = 1; i < 0x40; i++)
             {
               color_update_m5(i, *(uint16 *)&cram[i << 1]);
@@ -1800,7 +1800,7 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
             {
               color_update_m4(i, *(uint16 *)&cram[i << 1]);
             }
-            color_update_m4(0x40, *(uint16 *)&cram[(0x10 | (border & 0x0F)) << 1]);
+            color_update_m4(0x40, *(uint16 *)&cram[(0x10 | (bordrr & 0x0F)) << 1]);
 
             /* Mode 4 bus access */
             vdp_68k_data_w = vdp_68k_data_w_m4;
@@ -1910,10 +1910,10 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
       /* Check if backdrop color changed */
       d &= 0x3F;
 
-      if (d != border)
+      if (d != bordrr)
       {
         /* Update backdrop color */
-        border = d;
+        bordrr = d;
 
         /* Reset palette entry */
         if (reg[1] & 4)
@@ -1990,7 +1990,7 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
       {
         /* Reset color palette */
         int i;
-        color_update_m5(0x00, *(uint16 *)&cram[border << 1]);
+        color_update_m5(0x00, *(uint16 *)&cram[bordrr << 1]);
         for (i = 1; i < 0x40; i++)
         {
           color_update_m5(i, *(uint16 *)&cram[i << 1]);
@@ -2269,7 +2269,7 @@ static void vdp_bus_w(unsigned int data)
         }
 
         /* Update backdrop color */
-        if (index == border)
+        if (index == bordrr)
         {
           color_update_m5(0x00, data);
         }
@@ -2382,7 +2382,7 @@ static void vdp_68k_data_w_m4(unsigned int data)
       color_update_m4(index, data);
 
       /* Update backdrop color */
-      if (index == (0x10 | (border & 0x0F)))
+      if (index == (0x10 | (bordrr & 0x0F)))
       {
         color_update_m4(0x40, data);
       }
@@ -2612,7 +2612,7 @@ static void vdp_z80_data_w_m4(unsigned int data)
       color_update_m4(index, data);
 
       /* Update backdrop color */
-      if (index == (0x10 | (border & 0x0F)))
+      if (index == (0x10 | (bordrr & 0x0F)))
       {
         color_update_m4(0x40, data);
       }
@@ -2712,7 +2712,7 @@ static void vdp_z80_data_w_m5(unsigned int data)
         }
 
         /* Update backdrop color */
-        if (index == border)
+        if (index == bordrr)
         {
           color_update_m5(0x00, data);
         }
@@ -2875,7 +2875,7 @@ static void vdp_z80_data_w_ms(unsigned int data)
       color_update_m4(index, data);
 
       /* Update backdrop color */
-      if (index == (0x10 | (border & 0x0F)))
+      if (index == (0x10 | (bordrr & 0x0F)))
       {
         color_update_m4(0x40, data);
       }
@@ -2947,7 +2947,7 @@ static void vdp_z80_data_w_gg(unsigned int data)
         color_update_m4(index, data);
 
         /* Update backdrop color */
-        if (index == (0x10 | (border & 0x0F)))
+        if (index == (0x10 | (bordrr & 0x0F)))
         {
           color_update_m4(0x40, data);
         }
@@ -3218,7 +3218,7 @@ static void vdp_dma_fill(unsigned int length)
           }
 
           /* Update backdrop color */
-          if (index == border)
+          if (index == bordrr)
           {
             color_update_m5(0x00, data);
           }
