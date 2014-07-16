@@ -106,21 +106,20 @@ static int16_t input_state_callback(unsigned port, unsigned device, unsigned ind
 
 static bool environment_callback(unsigned cmd, void *data)
 {
+    GET_CURRENT_AND_RETURN(false);
+    
     switch(cmd)
     {
         case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY :
         {
-            // FIXME: Build a path in a more appropriate place
-            NSString *appSupportPath = [NSString pathWithComponents:@[
-                                        [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) lastObject],
-                                        @"OpenEmu", @"BIOS"]];
+            NSString *biosPath = current.biosDirectoryPath;
             
-            *(const char **)data = [appSupportPath UTF8String];
-            NSLog(@"Environ SYSTEM_DIRECTORY: \"%@\".\n", appSupportPath);
+            *(const char **)data = [biosPath UTF8String];
+            //NSLog(@"Environ SYSTEM_DIRECTORY: \"%@\".\n", biosPath);
             break;
         }
         default :
-            NSLog(@"Environ UNSUPPORTED (#%u).\n", cmd);
+            //NSLog(@"Environ UNSUPPORTED (#%u).\n", cmd);
             return false;
     }
     
