@@ -438,6 +438,9 @@ static void writeSaveFile(const char* path, int type)
     // Sanitize
     code = [code stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     
+    // Genesis Plus GX expects cheats UPPERCASE
+    code = [code uppercaseString];
+    
     // Remove any spaces
     code = [code stringByReplacingOccurrencesOfString:@" " withString:@""];
     
