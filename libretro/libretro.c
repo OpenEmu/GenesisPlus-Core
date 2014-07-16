@@ -772,6 +772,26 @@ static void clear_cheats(void)
   }
 }
 
+static void remove_cheats(void)
+{
+    int i = maxcheats;
+    while (i > 0)
+    {
+        if (cheatlist[i-1].enable)
+        {
+            cheatlist[i-1].text[0] = 0;
+            cheatlist[i-1].code[0] = 0;
+            cheatlist[i-1].address = 0;
+            cheatlist[i-1].data = 0;
+            cheatlist[i-1].enable = 0;
+            
+            maxcheats--;
+        }
+        
+        i--;
+    }
+}
+
 /****************************************************************************
  * RAMCheatUpdate
  *
@@ -850,9 +870,20 @@ bool retro_unserialize(const void *data, size_t size)
    return TRUE;
 }
 
-void retro_cheat_reset(void) {}
+void retro_cheat_reset(void)
+{
+    /* clear existing ROM patches */
+    clear_cheats();
+    
+    /* remove cheats from the list */
+    remove_cheats();
+}
+
 void retro_cheat_set(unsigned index, bool enabled, const char *code)
 {
+    /* clear existing ROM patches */
+    clear_cheats();
+    
     /* interpret code and give it an index */
     decode_cheat((char *)code, maxcheats);
 

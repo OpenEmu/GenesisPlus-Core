@@ -39,6 +39,7 @@
     int16_t pad[2][12];
     NSString *romName;
     double sampleRate;
+    NSMutableDictionary *cheatList;
 }
 
 @end
@@ -205,6 +206,7 @@ static void writeSaveFile(const char* path, int type)
     if((self = [super init]))
     {
         videoBuffer = (uint16_t*)malloc(720 * 576 * 2);
+        cheatList = [[NSMutableDictionary alloc] init];
     }
     
 	_current = self;
@@ -430,13 +432,37 @@ static void writeSaveFile(const char* path, int type)
     block(YES, nil);
 }
 
+#pragma mark - Cheats
+
 - (void)setCheat:(NSString *)code setType:(NSString *)type setEnabled:(BOOL)enabled
 {
-    NSArray *multipleCodes = [[NSArray alloc] init];
-    multipleCodes = [code componentsSeparatedByString:@"+"];
+    // Sanitize
+    code = [code stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     
-    for (NSString *singleCode in multipleCodes) {
-        retro_cheat_set(nil, enabled, [singleCode UTF8String]);
+    // Remove any spaces
+    code = [code stringByReplacingOccurrencesOfString:@" " withString:@""];
+    
+    if (enabled)
+        [cheatList setValue:@YES forKey:code];
+    else
+        [cheatList removeObjectForKey:code];
+    
+    retro_cheat_reset();
+    
+    NSArray *multipleCodes = [[NSArray alloc] init];
+    
+    // Apply enabled cheats found in dictionary
+    for (id key in cheatList)
+    {
+        if ([[cheatList valueForKey:key] isEqual:@YES])
+        {
+            // Handle multi-line cheats
+            multipleCodes = [key componentsSeparatedByString:@"+"];
+            
+            for (NSString *singleCode in multipleCodes) {
+                retro_cheat_set(0, enabled, [singleCode UTF8String]);
+            }
+        }
     }
 }
 
