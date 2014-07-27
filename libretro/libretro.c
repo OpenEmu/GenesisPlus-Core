@@ -292,13 +292,13 @@ static void configure_controls(void)
          {
             config.input[i].padtype = DEVICE_PAD6B;
          }	
-         input.system[0] = SYSTEM_MD_GAMEPAD;
-         input.system[1] = SYSTEM_MD_GAMEPAD;
+         input.system[0] = SYSTEM_GAMEPAD;
+         input.system[1] = SYSTEM_GAMEPAD;
          break;
       case SYSTEM_GG:
       case SYSTEM_SMS:
-         input.system[0] = SYSTEM_MS_GAMEPAD;
-         input.system[1] = SYSTEM_MS_GAMEPAD;
+         input.system[0] = SYSTEM_GAMEPAD;
+         input.system[1] = SYSTEM_GAMEPAD;
          break;
       default:
          break;
@@ -1143,8 +1143,7 @@ void osd_input_update(void)
 
    switch (input.system[0])
    {
-      case SYSTEM_MS_GAMEPAD:
-      case SYSTEM_MD_GAMEPAD:
+      case SYSTEM_GAMEPAD:
          if(input.dev[0] != NO_DEVICE)
          {
          for (j = 0; j < sizeof(binds) / sizeof(binds[0]); j++)
@@ -1179,8 +1178,7 @@ void osd_input_update(void)
 
    switch (input.system[1])
    {
-      case SYSTEM_MS_GAMEPAD:
-      case SYSTEM_MD_GAMEPAD:
+      case SYSTEM_GAMEPAD:
          if(input.dev[4] != NO_DEVICE)
          {
             for (j = 0; j < sizeof(binds) / sizeof(binds[0]); j++)

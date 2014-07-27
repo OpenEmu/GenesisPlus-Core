@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  Mega Drive cartridge hardware support
  *
- *  Copyright (C) 2007-2013  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2014  Eke-Eke (Genesis Plus GX)
  *
  *  Many cartridge protections were initially documented by Haze
  *  (http://haze.mameworld.info/)
@@ -292,19 +292,27 @@ void md_cart_init(void)
   while (cart.romsize > size)
     size <<= 1;
 
-  /* total ROM size is not a factor of 2  */
-  /* TODO: handle all possible ROM configurations using cartridge database */
-  if ((size < MAXROMSIZE) && (cart.romsize < size))
-  {
-    /* ROM is padded up to 2^k bytes */
-    memset(cart.rom + cart.romsize, 0xff, size - cart.romsize);
-  }
-
   /* Sonic & Knuckles */
   if (strstr(rominfo.international,"SONIC & KNUCKLES"))
   {
     /* disable ROM mirroring at $200000-$3fffff (normally mapped to external cartridge) */
     size = 0x400000;
+  }
+
+  /* total ROM size is not a factor of 2  */
+  /* TODO: handle all possible ROM configurations using cartridge database */
+  if (cart.romsize < size)
+  {
+    if (size < MAXROMSIZE)
+    {
+      /* ROM is padded up to 2^k bytes */
+      memset(cart.rom + cart.romsize, 0xff, size - cart.romsize);
+    }
+    else
+    {
+      /* ROM is padded up to max ROM size */
+      memset(cart.rom + cart.romsize, 0xff, MAXROMSIZE - cart.romsize);
+    }
   }
 
   /* ROM is mirrored each 2^k bytes */
@@ -419,7 +427,7 @@ void md_cart_init(void)
       if (input.system[1] != SYSTEM_WAYPLAY)
       {
         old_system[1] = input.system[1];
-        input.system[1] = SYSTEM_MD_GAMEPAD;
+        input.system[1] = SYSTEM_GAMEPAD;
       }
 
       /* extra connectors mapped at $38xxxx or $3Fxxxx */

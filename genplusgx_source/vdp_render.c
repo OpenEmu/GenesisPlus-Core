@@ -1,11 +1,11 @@
 /***************************************************************************************
  *  Genesis Plus
- *  Video Display Processor (Modes 0, 1, 2, 3, 4 & 5 rendering)
+ *  Video Display Processor (video output rendering)
  *
- *  Support for SG-1000, Master System (315-5124 & 315-5246), Game Gear & Mega Drive VDP
+ *  Support for all TMS99xx modes, Mode 4 & Mode 5 rendering
  *
  *  Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2013  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2014  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -1023,6 +1023,7 @@ void color_update_m4(int index, unsigned int data)
     }
 
     case SYSTEM_SG:
+    case SYSTEM_SGII:
     {
       /* Fixed TMS99xx palette */
       if (index & 0x0F)
@@ -1142,8 +1143,7 @@ void color_update_m5(int index, unsigned int data)
 /* Graphics I */
 void render_bg_m0(int line)
 {
-  uint8 color, pattern;
-  uint16 name;
+  uint8 color, name, pattern;
 
   uint8 *lb = &linebuf[0][0x20];
   uint8 *nt = &vram[((reg[2] << 10) & 0x3C00) + ((line & 0xF8) << 2)];
@@ -1190,7 +1190,7 @@ void render_bg_m1(int line)
 
   do
   {
-    pattern = pg[*nt++];
+    pattern = pg[*nt++ << 3];
 
     *lb++ = 0x10 | ((color >> (((pattern >> 7) & 1) << 2)) & 0x0F);
     *lb++ = 0x10 | ((color >> (((pattern >> 6) & 1) << 2)) & 0x0F);
@@ -1298,8 +1298,6 @@ void render_bg_m2(int line)
 void render_bg_m3(int line)
 {
   uint8 color;
-  uint16 name;
-
   uint8 *lb = &linebuf[0][0x20];
   uint8 *nt = &vram[((reg[2] << 10) & 0x3C00) + ((line & 0xF8) << 2)];
   uint8 *pg = &vram[((reg[4] << 11) & 0x3800) + ((line >> 2) & 7)];
@@ -1309,8 +1307,7 @@ void render_bg_m3(int line)
 
   do
   {
-    name = *nt++;
-    color = pg[name << 3];
+    color = pg[*nt++ << 3];
     
     *lb++ = 0x10 | ((color >> 4) & 0x0F);
     *lb++ = 0x10 | ((color >> 4) & 0x0F);
@@ -1328,7 +1325,6 @@ void render_bg_m3(int line)
 void render_bg_m3x(int line)
 {
   uint8 color;
-  uint16 name;
   uint8 *pg;
 
   uint8 *lb = &linebuf[0][0x20];
@@ -1349,8 +1345,7 @@ void render_bg_m3x(int line)
 
   do
   {
-    name = *nt++;
-    color = pg[name << 3];
+    color = pg[*nt++ << 3];
     
     *lb++ = 0x10 | ((color >> 4) & 0x0F);
     *lb++ = 0x10 | ((color >> 4) & 0x0F);
@@ -3817,44 +3812,50 @@ void parse_satb_m5(int line)
 
   do
   {
-    /* Read Y position & size from internal SAT */
+    /* Read Y position from internal SAT cache */
     ypos = (q[link] >> im2_flag) & 0x1FF;
-    size = q[link + 1] >> 8;
 
-    /* Sprite height */
-    height = 8 + ((size & 3) << 3);
-
-    /* Y range */
-    ypos = line - ypos;
-
-    /* Sprite is visble on this line ? */
-    if ((ypos >= 0) && (ypos < height))
+    /* Check if sprite Y position has been reached */
+    if (line >= ypos)
     {
-      /* Sprite overflow */
-      if (count == max)
+      /* Read sprite size from internal SAT cache */
+      size = q[link + 1] >> 8;
+
+      /* Sprite height */
+      height = 8 + ((size & 3) << 3);
+
+      /* Y range */
+      ypos = line - ypos;
+
+      /* Check if sprite is visible on current line */
+      if (ypos < height)
       {
-        status |= 0x40;
-        break;
+        /* Sprite overflow */
+        if (count == max)
+        {
+          status |= 0x40;
+          break;
+        }
+
+        /* Update sprite list (only name, attribute & xpos are parsed from VRAM) */ 
+        object_info->attr  = p[link + 2];
+        object_info->xpos  = p[link + 3] & 0x1ff;
+        object_info->ypos  = ypos;
+        object_info->size  = size & 0x0f; 
+
+        /* Increment Sprite count */
+        ++count;
+
+        /* Next sprite entry */
+        object_info++;
       }
-
-      /* Update sprite list (only name, attribute & xpos are parsed from VRAM) */ 
-      object_info->attr  = p[link + 2];
-      object_info->xpos  = p[link + 3] & 0x1ff;
-      object_info->ypos  = ypos;
-      object_info->size  = size & 0x0f; 
-
-      /* Increment Sprite count */
-      ++count;
-
-      /* Next sprite entry */
-      object_info++;
     }
 
-    /* Read link data from internal SAT */ 
+    /* Read link data from internal SAT cache */ 
     link = (q[link + 1] & 0x7F) << 2;
 
-    /* Last sprite */
-    if (link == 0) break;
+    /* Stop parsing if link data points to first entry (#0) or after the last entry (#64 in H32 mode, #80 in H40 mode) */
+    if ((link == 0) || (link >= bitmap.viewport.w)) break;
   }
   while (--total);
 
@@ -4109,7 +4110,7 @@ void render_line(int line)
     /* Left-most column blanking */
     if (reg[0] & 0x20)
     {
-      if (system_hw > SYSTEM_SG)
+      if (system_hw > SYSTEM_SGII)
       {
         memset(&linebuf[0][0x20], 0x40, 8);
       }
@@ -4122,8 +4123,11 @@ void render_line(int line)
     }
 
     /* Horizontal borders */
-    memset(&linebuf[0][0x20 - bitmap.viewport.x], 0x40, bitmap.viewport.x);
-    memset(&linebuf[0][0x20 + bitmap.viewport.w], 0x40, bitmap.viewport.x);
+    if (bitmap.viewport.x > 0)
+    {
+      memset(&linebuf[0][0x20 - bitmap.viewport.x], 0x40, bitmap.viewport.x);
+      memset(&linebuf[0][0x20 + bitmap.viewport.w], 0x40, bitmap.viewport.x);
+    }
   }
   else
   {
