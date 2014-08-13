@@ -757,7 +757,7 @@
 					"-fPIC",
 					"-DLSB_FIRST",
 					"-DHAVE_ZLIB",
-					"-DUSE_15BPP_RENDERING",
+					"-DUSE_32BPP_RENDERING",
 					"-DNDEBUG",
 					"-D__LIBRETRO__",
 				);
@@ -794,7 +794,7 @@
 					"-fPIC",
 					"-DLSB_FIRST",
 					"-DHAVE_ZLIB",
-					"-DUSE_15BPP_RENDERING",
+					"-DUSE_32BPP_RENDERING",
 					"-DNDEBUG",
 					"-D__LIBRETRO__",
 				);

@@ -209,7 +209,7 @@ int load_archive(char *filename, unsigned char *buffer, int maxsize, char *exten
 }
 
 //static uint16_t bitmap_data_[1024 * 512];
-static uint16_t bitmap_data_[720 * 576];
+static uint32_t bitmap_data_[720 * 576];
 
 static void init_bitmap(void)
 {
@@ -218,7 +218,7 @@ static void init_bitmap(void)
    //bitmap.height     = 512;
    bitmap.width      = 720;
    bitmap.height     = 576;
-   bitmap.pitch      = bitmap.width * sizeof(uint16_t);
+   bitmap.pitch      = bitmap.width * sizeof(uint32_t);
    bitmap.data       = (uint8_t *)bitmap_data_;
    bitmap.viewport.w = 0;
    bitmap.viewport.h = 0;

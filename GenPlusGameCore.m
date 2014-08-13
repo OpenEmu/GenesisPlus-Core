@@ -34,7 +34,7 @@
 
 @interface GenPlusGameCore () <OEGenesisSystemResponderClient, OESegaCDSystemResponderClient>
 {
-    uint16_t *videoBuffer;
+    uint32_t *videoBuffer;
     int videoWidth, videoHeight;
     int16_t pad[2][12];
     NSString *romName;
@@ -76,10 +76,10 @@ static void video_callback(const void *data, unsigned width, unsigned height, si
     dispatch_queue_t the_queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
     
     dispatch_apply(height, the_queue, ^(size_t y){
-        const uint16_t *src = (uint16_t*)data + y * (pitch >> 1); //pitch is in bytes not pixels
-        uint16_t *dst = current->videoBuffer + y * 720;
+        const uint32_t *src = (uint32_t*)data + y * (pitch >> 2); //pitch is in bytes not pixels
+        uint32_t *dst = current->videoBuffer + y * 720;
         
-        memcpy(dst, src, sizeof(uint16_t)*width);
+        memcpy(dst, src, sizeof(uint32_t)*width);
     });
 }
 
@@ -204,7 +204,7 @@ static void writeSaveFile(const char* path, int type)
 {
     if((self = [super init]))
     {
-        videoBuffer = (uint16_t*)malloc(720 * 576 * 2);
+        videoBuffer = (uint32_t*)malloc(720 * 576 * 4);
         cheatList = [[NSMutableDictionary alloc] init];
     }
     
@@ -345,19 +345,17 @@ static void writeSaveFile(const char* path, int type)
 
 - (GLenum)pixelFormat
 {
-    //return GL_RGB;
     return GL_BGRA;
 }
 
 - (GLenum)pixelType
 {
-    //return GL_UNSIGNED_SHORT_5_6_5;
-    return GL_UNSIGNED_SHORT_1_5_5_5_REV;
+    return GL_UNSIGNED_INT_8_8_8_8_REV;
 }
 
 - (GLenum)internalPixelFormat
 {
-    return GL_RGB5;
+    return GL_RGB8;
 }
 
 - (double)audioSampleRate
