@@ -28,15 +28,15 @@
 	<dict>
 		<key>openemu.system.scd</key>
 		<dict>
-			<key>OEGameCoreSupportsRewinding</key>
-			<true/>
-			<key>OEGameCoreRewindInterval</key>
-			<integer>0</integer>
-			<key>OEGameCoreRewindBufferSeconds</key>
-			<integer>3600</integer>
 			<key>OEGameCoreRequiresFiles</key>
 			<true/>
+			<key>OEGameCoreRewindBufferSeconds</key>
+			<integer>3600</integer>
+			<key>OEGameCoreRewindInterval</key>
+			<integer>0</integer>
 			<key>OEGameCoreSupportsCheatCode</key>
+			<true/>
+			<key>OEGameCoreSupportsRewinding</key>
 			<true/>
 			<key>OERequiredFiles</key>
 			<array>
@@ -74,13 +74,13 @@
 		</dict>
 		<key>openemu.system.sg</key>
 		<dict>
-			<key>OEGameCoreSupportsRewinding</key>
-			<true/>
-			<key>OEGameCoreRewindInterval</key>
-			<integer>0</integer>
 			<key>OEGameCoreRewindBufferSeconds</key>
 			<integer>3600</integer>
+			<key>OEGameCoreRewindInterval</key>
+			<integer>0</integer>
 			<key>OEGameCoreSupportsCheatCode</key>
+			<true/>
+			<key>OEGameCoreSupportsRewinding</key>
 			<true/>
 		</dict>
 	</dict>

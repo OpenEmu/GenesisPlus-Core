@@ -1,19 +1,11 @@
 #ifndef _OSD_H
 #define _OSD_H
 
-#ifdef _MSC_VER
-#include <stdio.h>
-typedef unsigned char bool;
-#define strncasecmp _strnicmp
-#endif
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define MAX_INPUTS 8
-#define MAX_KEYS 8
-#define MAXPATHLEN 1024
 
 #ifndef TRUE
 #define TRUE 1
@@ -27,8 +19,6 @@ typedef unsigned char bool;
 #define M_PI 3.1415926535897932385
 #endif
 
-//#define ALIGN_SND 0xfffffff8  /* 32 bytes aligned sound buffers (8 samples alignment) */
-
 typedef struct 
 {
     int8 device;
@@ -36,7 +26,7 @@ typedef struct
     uint8 padtype;
 } t_input_config;
 
-typedef struct 
+struct
 {
     char version[16];
     uint8 hq_fm;
@@ -61,16 +51,12 @@ typedef struct
     uint8 addr_error;
     uint8 bios;
     uint8 lock_on;
-    uint8 hot_swap;
     uint8 overscan;
     uint8 gg_extra;
     uint8 ntsc;
     uint8 render;
     t_input_config input[MAX_INPUTS];
-} t_config;
-
-/* Global data */
-t_config config;
+} config;
 
 extern char GG_ROM[256];
 extern char AR_ROM[256];
@@ -83,18 +69,6 @@ extern char CD_BIOS_JP[256];
 extern char MS_BIOS_US[256];
 extern char MS_BIOS_EU[256];
 extern char MS_BIOS_JP[256];
-
-//extern int16 soundbuffer[3068];
-extern int16 soundbuffer[2048 * 2]; //3068 1920 ?
-
-//#define SOUND_SAMPLES_SIZE  2048
-//n = SOUND_SAMPLES_SIZE * 2 * sizeof(short) * 11;
-//sdl_sound.buffer = (char*)malloc(n);
-
-//static short soundframe[SOUND_SAMPLES_SIZE];
-//int size = audio_update(soundframe) * 2;
-
-#define VERSION "Genesis Plus GX 1.7.3 (libretro)"
 
 void osd_input_update(void);
 int load_archive(char *filename, unsigned char *buffer, int maxsize, char *extension);
