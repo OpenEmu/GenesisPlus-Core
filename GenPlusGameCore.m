@@ -416,22 +416,22 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
 
 - (oneway void)didPushGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player;
 {
-    input.pad[player-1] |= GenesisMap[button];
+    input.pad[(player-1) * 4] |= GenesisMap[button];
 }
 
 - (oneway void)didReleaseGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player;
 {
-    input.pad[player-1] &= ~GenesisMap[button];
+    input.pad[(player-1) * 4] &= ~GenesisMap[button];
 }
 
 - (oneway void)didPushSegaCDButton:(OESegaCDButton)button forPlayer:(NSUInteger)player;
 {
-    input.pad[player-1] |= GenesisMap[button];
+    input.pad[(player-1) * 4] |= GenesisMap[button];
 }
 
 - (oneway void)didReleaseSegaCDButton:(OESegaCDButton)button forPlayer:(NSUInteger)player;
 {
-    input.pad[player-1] &= ~GenesisMap[button];
+    input.pad[(player-1) * 4] &= ~GenesisMap[button];
 }
 
 #pragma mark - Cheats
