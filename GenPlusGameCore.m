@@ -85,16 +85,27 @@ static uint8_t cheatIndexes[MAX_CHEATS];
 static char ggvalidchars[] = "ABCDEFGHJKLMNPRSTVWXYZ0123456789";
 static char arvalidchars[] = "0123456789ABCDEF";
 
+typedef NS_ENUM(NSInteger, MultiTapType)
+{
+    MultiTapTypeNone,
+    TeamPlayerPort1,                // 1-4 players: TeamPlayer in Port 1
+    GamepadPort1TeamPlayerPort2,    // 1-4 players: Gamepad Port 1, TeamPlayer Port 2
+    TeamPlayerPort1TeamPlayerPort2, // 1-8 players: TeamPlayer in Port 1, TeamPlayer Port 2
+    EA4WayPlay                      // 1-4 players: EA 4-Way Play
+};
+
 @interface GenPlusGameCore () <OEGenesisSystemResponderClient, OESegaCDSystemResponderClient>
 {
     uint32_t *videoBuffer;
     int16_t *soundBuffer;
     NSMutableDictionary *cheatList;
     NSURL *_romFile;
+    MultiTapType _multiTapType;
 }
 - (void)applyCheat:(NSString *)code;
 - (void)resetCheats;
 - (void)configureOptions;
+- (void)configureInput;
 @end
 
 @implementation GenPlusGameCore
@@ -141,6 +152,7 @@ static __weak GenPlusGameCore *_current;
     if (!load_rom((char *)[path UTF8String]))
         return NO;
 
+    [self configureInput];
     audio_init(48000, vdp_pal ? pal_fps : ntsc_fps);
 
     system_init();
@@ -416,22 +428,64 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
 
 - (oneway void)didPushGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player;
 {
-    input.pad[(player-1) * 4] |= GenesisMap[button];
+    if (_multiTapType == GamepadPort1TeamPlayerPort2)
+    {
+        int offset = (player == 1) ? 0 : player + 2;
+        input.pad[offset] |= GenesisMap[button];
+    }
+    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
+    {
+        input.pad[player-1] |= GenesisMap[button];
+    }
+    else
+    {
+        input.pad[(player-1) * 4] |= GenesisMap[button];
+    }
 }
 
 - (oneway void)didReleaseGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player;
 {
-    input.pad[(player-1) * 4] &= ~GenesisMap[button];
+    if (_multiTapType == GamepadPort1TeamPlayerPort2)
+    {
+        int offset = (player == 1) ? 0 : player + 2;
+        input.pad[offset] &= ~GenesisMap[button];
+    }
+    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
+    {
+        input.pad[player-1] &= ~GenesisMap[button];
+    }
+    else
+        input.pad[(player-1) * 4] &= ~GenesisMap[button];
 }
 
 - (oneway void)didPushSegaCDButton:(OESegaCDButton)button forPlayer:(NSUInteger)player;
 {
-    input.pad[(player-1) * 4] |= GenesisMap[button];
+    if (_multiTapType == GamepadPort1TeamPlayerPort2)
+    {
+        int offset = (player == 1) ? 0 : player + 2;
+        input.pad[offset] |= GenesisMap[button];
+    }
+    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
+    {
+        input.pad[player-1] |= GenesisMap[button];
+    }
+    else
+        input.pad[(player-1) * 4] |= GenesisMap[button];
 }
 
 - (oneway void)didReleaseSegaCDButton:(OESegaCDButton)button forPlayer:(NSUInteger)player;
 {
-    input.pad[(player-1) * 4] &= ~GenesisMap[button];
+    if (_multiTapType == GamepadPort1TeamPlayerPort2)
+    {
+        int offset = (player == 1) ? 0 : player + 2;
+        input.pad[offset] &= ~GenesisMap[button];
+    }
+    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
+    {
+        input.pad[player-1] &= ~GenesisMap[button];
+    }
+    else
+        input.pad[(player-1) * 4] &= ~GenesisMap[button];
 }
 
 #pragma mark - Cheats
@@ -531,20 +585,238 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
     config.ntsc     = 0;
     config.render   = 0;
 
-    /* controllers options */
-    input.system[0]       = SYSTEM_GAMEPAD;
-    input.system[1]       = SYSTEM_GAMEPAD;
-    for (unsigned i = 0; i < MAX_INPUTS; i++)
-    {
-        config.input[i].padtype = DEVICE_PAD6B;
-    }
-
     /* initialize bitmap */
     memset(&bitmap, 0, sizeof(bitmap));
     bitmap.width      = 720;
     bitmap.height     = 576;
     bitmap.pitch      = bitmap.width * sizeof(uint32_t);
     bitmap.data       = (uint8_t *)videoBuffer;
+}
+
+- (void)configureInput
+{
+    _multiTapType = MultiTapTypeNone;
+
+    // Overrides: Six button controller-supported games missing '6' byte in cart header, so they cannot be auto-detected
+    NSArray *pad6Buttons = @[
+                             @"b04c06df1009c60182df902a4ec7c959", // Batman Forever (World)
+                             @"7b144947f6e8842dd4419d5166cddff6", // Boogerman - A Pick and Flick Adventure (Europe)
+                             @"265a10bf2ea2d1ee30e6cde631d54474", // Boogerman - A Pick and Flick Adventure (USA)
+                             @"ac51f4585a42cba91d04f667dd1fd60a", // Coach K College Basketball (USA)
+                             @"e68281bee6a4e9620d306b197860a506", // Comix Zone (USA) (Beta)
+                             @"a9b4642a5b5d22f565222d2d8a4e04f9", // Davis Cup Tennis ~ Davis Cup World Tour (USA, Europe) (June 1993)
+                             @"d1acc657850f56f19d0a027e8ea54a75", // Davis Cup Tennis ~ Davis Cup World Tour (USA, Europe) (July 1993)
+                             @"c2789976bfa41f1e617589db9043e3a2", // Davis Cup II (USA) (Proto)
+                             @"ae9347eeea41c1a02565a187a4bf28f7", // Dragon Ball Z - Buyuu Retsuden (Japan)
+                             @"9386f82fc9ab95294ca35961db80d0b9", // Dragon Ball Z - L'Appel du Destin (France)
+                             @"5093ad6641abb0c3757d24da094a51e6", // Duke Nukem 3D (Brazil)
+                             @"6ba9e256579f0cbfa18abb96acc5b24d", // Greatest Heavyweights (Europe)
+                             @"8662fc03ecb681fb5a463a2e9bb2ae41", // Greatest Heavyweights (Japan)
+                             @"a2319592a31d22d9ec4501ce4c188152", // Greatest Heavyweights (USA)
+                             @"a8dcb5476855a83702e2f49ebd4e2d57", // Lost Vikings, The (USA)
+                             @"7914adf64ff1156c767ae550334c44b5", // Marsupilami (Europe) (En,Fr,De,Es,It)
+                             @"9cf141681e68407d1e5279f7a35d6d53", // Marsupilami (USA) (En,Fr,De,Es,It)
+                             @"a1dd8a3e4b8c98dee49d5e90d6b87903", // Mortal Kombat (World)
+                             @"e0bb4d00ea95b75aac52851fb4d8ee47", // Mortal Kombat (World) (v1.1)
+                             @"697fe71f7c6601b80ff486297124d301", // Nightmare Circus (Brazil)
+                             @"6e325bc3fe03b2bbcd39e667cf0b567a", // Nightmare Circus (Brazil) (Beta)
+                             @"72b5848612f80d14bc51807f8c7e239e", // Shaq-Fu (USA, Europe)
+                             @"5a8f7c6437d239690b4a15287d841c26", // Shinobi III - Return of the Ninja Master (Europe)
+                             @"691eeff9c5741724a8751ec0fa9cfbf0", // Shinobi III - Return of the Ninja Master (USA)
+                             @"6ce59f3e7ee52dc8c6df7b4d8a166826", // Super Shinobi II, The (Japan, Korea)
+                             @"7ded2700acc1715153f630fa266e0e89", // Skeleton Krew (Europe)
+                             @"7e9a79a887c4edf56574d7a1cd72c5fd", // Skeleton Krew (USA)
+                             @"c2967c23e72387743911bb28beb6f144", // Street Racer (Europe)
+                             @"4cd30f3ad42b0354659d128bdcd61a6c", // TechnoClash (USA, Europe)
+                             @"0f0be2db4084822d5514f8e34a0d1488", // Urban Strike (USA, Europe)
+                             @"8d83131da5dfe5a1e83e4390e7777064", // WWF Royal Rumble (World)
+                             ];
+
+    // Different port configurations and multitap devices are used depending on the game
+    // TODO: Identify supported Sega CD games by rominfo.domestic/rominfo.international?
+    NSDictionary *multiTapGames =
+    @{
+      @"2b27a61cdae4492044bd273c5807de75" : @(TeamPlayerPort1), // Barkley Shut Up and Jam! (USA, Europe)
+      @"952e40844509c5739f1e84ea7f9dfd90" : @(TeamPlayerPort1), // Barkley Shut Up and Jam 2 (USA)
+      @"76aab0e8bc8e670a347676aaf0a0aea3" : @(TeamPlayerPort1), // College Football's National Championship (USA)
+      @"d608a160eda8597113b3cdf92941a048" : @(TeamPlayerPort1), // College Football's National Championship II (USA)
+      @"a279a2fa2317f9081ba02226cce6b1ed" : @(TeamPlayerPort1), // Dragon - The Bruce Lee Story (Europe)
+      @"94ebb9a19bbb7b5749bf07ab3ce8fbb9" : @(TeamPlayerPort1), // Dragon - The Bruce Lee Story (USA)
+      @"817fceb36d9a454c59253be990779f99" : @(TeamPlayerPort1), // From TV Animation Slam Dunk - Kyougou Makkou Taiketsu! (Japan)
+      @"9aad96cc5364d2289f470b75c59907a5" : @(TeamPlayerPort1), // Gauntlet (Japan) (En,Ja)
+      @"5e8ec4c047ef4af15027e93b5358858f" : @(TeamPlayerPort1), // Gauntlet IV (Japan) (En,Ja)
+      @"840f9f6fd4f22686b89cfd9a9ade105a" : @(TeamPlayerPort1), // Gauntlet IV (USA, Europe) (En,Ja)
+      @"1f8e7897522b6e645f4b8123bff23654" : @(TeamPlayerPort1), // J. League Pro Striker Final Stage (Japan)
+      @"44752b050421c4e51d1bee96b3fed44e" : @(TeamPlayerPort1), // Lost Vikings, The (Europe)
+      @"a8dcb5476855a83702e2f49ebd4e2d57" : @(TeamPlayerPort1), // Lost Vikings, The (USA)
+      @"5a94b1e8792bb3572db92c2019d99377" : @(TeamPlayerPort1), // Mega Bomberman (Europe)
+      @"514f6cad98f5f632d680983a050fffc4" : @(TeamPlayerPort1), // Mega Bomberman (USA)
+      @"f9a4e85931dcaaceded19c0c2a7aace1" : @(TeamPlayerPort1), // NBA Hang Time (Europe)
+      @"a2dddb13539df45f45ff4061cd6caacd" : @(TeamPlayerPort1), // NBA Hang Time (USA)
+      @"d72f13bc94ad76c90deef86d5a138ff6" : @(TeamPlayerPort1), // NBA Jam (Japan)
+      @"234bf02f7f7b6fdad65890424d3a8a8f" : @(TeamPlayerPort1), // NBA Jam (USA, Europe) (v1.1)
+      @"338b8ed45e02d96f1ed31eaab59eaf43" : @(TeamPlayerPort1), // NBA Jam (USA, Europe)
+      @"edeb01f0aa8aed3868db1179670db22f" : @(TeamPlayerPort1), // NBA Jam - Tournament Edition (World)
+      @"3d3c4c2dcc8631373b73cf11170dd4d7" : @(TeamPlayerPort1), // NCAA Final Four Basketball (USA)
+      @"6e38acfb80ed7e0b1343fa4ffdc6477d" : @(TeamPlayerPort1), // NCAA Football (USA)
+      @"035283320f792caa2b55129db21f0265" : @(TeamPlayerPort1), // NFL '95 (USA, Europe)
+      @"80652330e1b3e2892785e27413691e4e" : @(TeamPlayerPort1), // NFL 98 (USA)
+      @"0faab2309047b85de82a62e0230ec9f4" : @(TeamPlayerPort1), // Pele II - World Tournament Soccer (USA, Europe)
+      @"15a8114b96afcabcb2bd08acbc7a11c0" : @(TeamPlayerPort1), // Prime Time NFL Starring Deion Sanders (USA)
+      @"a0003ccd281f9cc74aa2ef97fe23c2fc" : @(TeamPlayerPort1), // Puzzle & Action - Ichidanto-R (Japan)
+      @"16b0f48a07baf1fa0df27453b7f008d4" : @(TeamPlayerPort1), // Puzzle & Action - Tanto-R (Japan)
+      @"abddd42b2548e9b708991f689d726c9a" : @(TeamPlayerPort1), // Tiny Toon Adventures - Acme All-Stars (Europe)
+      @"1def1d7dbe4ab6b9e1fc90093292de6a" : @(TeamPlayerPort1), // Tiny Toon Adventures - Acme All-Stars (USA, Korea)
+      @"f314fe624d288b4e1228ae759bae1d86" : @(TeamPlayerPort1), // Unnecessary Roughness '95 (USA)
+      @"8be67519c2417d36ca51576ff1ab043b" : @(TeamPlayerPort1), // World Championship Soccer II (Europe)
+      @"d0686cf7c1851ebc960c08c9f9908a31" : @(TeamPlayerPort1), // World Championship Soccer II (USA)
+      @"d97666f8f935e50284026d442d9c5e6e" : @(TeamPlayerPort1), // World Cup USA 94 (USA, Europe)
+      @"296f057959c1c545178cc5c07f64877c" : @(TeamPlayerPort1), // WWF Raw (World)
+      @"8130283788f82677ec583b7f627dbf0c" : @(TeamPlayerPort1), // Yu Yu Hakusho - Makyou Toitsusen (Japan)
+      @"2a2165b2be91810f5b97e8d7d2f76ad5" : @(TeamPlayerPort1), // YuYu Hakusho - Sunset Fighters (Brazil)
+
+      // 1-4 Players
+      @"2dbad2e514d043d27340d640d9b138ac" : @(GamepadPort1TeamPlayerPort2), // ATP Tour (Europe)
+      @"723db55d679ef169b8210764a5f76c4d" : @(GamepadPort1TeamPlayerPort2), // ATP Tour Championship Tennis (USA)
+      @"5481f0cbab22ca071dad31dd3ca4f884" : @(GamepadPort1TeamPlayerPort2), // College Slam (USA)
+      @"6a492e2983b2bc306eec905411ee24a8" : @(GamepadPort1TeamPlayerPort2), // Dino Dini's Soccer (Europe)
+      @"f5f52249a5dc851864254935e185ea72" : @(GamepadPort1TeamPlayerPort2), // J. League Pro Striker (Japan) (v1.3)
+      @"ada241db25d7832866b1e58af2038bc6" : @(GamepadPort1TeamPlayerPort2), // J. League Pro Striker 2 (Japan)
+      @"a7046120d2a4b40949994c71177aec3c" : @(GamepadPort1TeamPlayerPort2), // J. League Pro Striker Perfect (Japan)
+      @"6f8cddb3775b588b49d13e7c62d08e86" : @(GamepadPort1TeamPlayerPort2), // Pepenga Pengo (Japan)
+      @"61c6f43629f218f75e9e78ff2e59bf55" : @(GamepadPort1TeamPlayerPort2), // Sega Sports 1 (Europe)
+      @"7bb99ff11b04544600ffe56dc79d72b3" : @(GamepadPort1TeamPlayerPort2), // Wimbledon Championship Tennis (Europe)
+      @"dd43c4cfd5958baeb9b4ddd5619f7255" : @(GamepadPort1TeamPlayerPort2), // Wimbledon Championship Tennis (Japan)
+      @"7978bb18dc7c6269f6b5c2178b93b407" : @(GamepadPort1TeamPlayerPort2), // Wimbledon Championship Tennis (USA)
+
+      // 1-5 Players
+      @"441b7e9c9811e22458660eb73975569c" : @(GamepadPort1TeamPlayerPort2), // Columns III (USA)
+      @"eeb557cd38ad00d6b4df48585098269a" : @(GamepadPort1TeamPlayerPort2), // Columns III - Taiketsu! Columns World (Japan, Korea)
+      @"b3ed61c2da404c31d2a5b6f6ada7b7ff" : @(GamepadPort1TeamPlayerPort2), // NBA Action '94 (USA)
+      @"dc9117965c0c3fcb9d28eb826082b223" : @(GamepadPort1TeamPlayerPort2), // NBA Action '95 Starring David Robinson (USA, Europe)
+      @"8147342e86d065fc240f09c803eb81b9" : @(TeamPlayerPort1TeamPlayerPort2), // NFL Quarterback Club (World)
+      @"8b99a84e9e661dccf4f79dbd7b149953" : @(TeamPlayerPort1TeamPlayerPort2), // NFL Quarterback Club 96 (USA, Europe)
+      @"b21b69f718115b502d10481e1f6ecc0b" : @(GamepadPort1TeamPlayerPort2), // Party Quiz Mega Q (Japan)
+
+      // 1-8 Players
+      @"a2b23303055f28e68afce7b7e2ea9edf" : @(TeamPlayerPort1TeamPlayerPort2), // Double Dribble - The Playoff Edition (USA)
+      @"a4a4e29f3540d3a11cdd8ee391069841" : @(TeamPlayerPort1TeamPlayerPort2), // Fever Pitch Soccer (Europe) (En,Fr,De,Es,It)
+      @"fb303d5d08b2ea748fe7aced9c0100fd" : @(TeamPlayerPort1TeamPlayerPort2), // Head-On Soccer (USA)
+      @"8bc39c10ed8d26d53a0f24f5daca81c8" : @(TeamPlayerPort1TeamPlayerPort2), // Hyper Dunk (Europe)
+      @"008bcd6a3fc35015df0851e996ce80b4" : @(TeamPlayerPort1TeamPlayerPort2), // Hyper Dunk - The Playoff Edition (Japan)
+      @"494d00e7c0a3ee5448e6b82fa091bac8" : @(TeamPlayerPort1TeamPlayerPort2), // International Superstar Soccer Deluxe (Europe)
+      @"f2f41f4b8e400ef33a72033ae851eee5" : @(TeamPlayerPort1TeamPlayerPort2), // Mega Bomberman 8 Player Demo
+      @"3426fc8802e1a385dc227b9dde59cbe4" : @(TeamPlayerPort1TeamPlayerPort2), // Ultimate Soccer (Europe) (En,Fr,De,Es,It)
+
+      // 1-4 Players EA 4-Way Play
+      @"29d948108a1c768c20af6796ab9ffc47" : @(EA4WayPlay), // Australian Rugby League (Europe)
+      @"1d51bbd116b76c6fdd6b7dd4c80e4957" : @(EA4WayPlay), // Bill Walsh College Football (USA, Europe)
+      @"585030d462ab6de4c79dc434141d16e2" : @(EA4WayPlay), // Bill Walsh College Football 95 (USA)
+      @"ac51f4585a42cba91d04f667dd1fd60a" : @(EA4WayPlay), // Coach K College Basketball (USA)
+      @"f54889e7ce17227d398669f9f4e7881d" : @(EA4WayPlay), // College Football USA 96 (USA)
+      @"dcb35bb9064171f07bb8b49d43c24d5b" : @(EA4WayPlay), // College Football USA 97 (USA)
+      @"64c2a99aba71e7796fd12546071592cc" : @(EA4WayPlay), // Elitserien 95 (Sweden)
+      @"add607e0dd5b9f294bb5a246d8946aed" : @(EA4WayPlay), // Elitserien 96 (Sweden)
+      @"22db8020749dd63b14c382b198ee1422" : @(EA4WayPlay), // ESPN National Hockey Night (USA)
+      @"3c7380bea3c1d479e5604006eab86961" : @(EA4WayPlay), // FIFA 98 - Road to World Cup (Europe) (En,Fr,Es,It,Sv)
+      @"a1546250206aafa61536b434e31cd568" : @(EA4WayPlay), // FIFA International Soccer (Japan) (En,Ja)
+      @"8a53e4db0da7ee312c1e89d449eb7b1e" : @(EA4WayPlay), // FIFA International Soccer (USA, Europe) (En,Fr,De,Es)
+      @"698a2fcf165e8c9bc5166aecf23771d2" : @(EA4WayPlay), // FIFA Soccer 95 (Korea) (En,Fr,De,Es)
+      @"26ac4f884df64349dcf46344db85812b" : @(EA4WayPlay), // FIFA Soccer 95 (USA, Europe) (En,Fr,De,Es)
+      @"545b07c1c599f49ea93a4b7b2c7c3782" : @(EA4WayPlay), // FIFA Soccer 96 (USA, Europe) (En,Fr,De,Es,It,Sv)
+      @"f4a8436b5218a201a08401bedbfcd065" : @(EA4WayPlay), // FIFA Soccer 97 (USA, Europe) (En,Fr,De,Es,It,Sv)
+      @"955622a63dc3b06c13823fb352f50912" : @(EA4WayPlay), // General Chaos (USA, Europe)
+      @"9ff0afe64a5765a1e2bc1f40bcd2e554" : @(EA4WayPlay), // General Chaos Daikonsen (Japan)
+      @"f0ecb410ac43c503f1321098e4203785" : @(EA4WayPlay), // IMG International Tour Tennis (USA, Europe)
+      @"9ca0c88961d110eaef383a0d8e3f22f6" : @(EA4WayPlay), // Madden NFL '94 (USA, Europe)
+      @"52b7e1ce6ae02a5b5c178d4df865b1dd" : @(EA4WayPlay), // Madden NFL 95 (USA, Europe)
+      @"f997e2088e3728941cbe3bf491b3496e" : @(EA4WayPlay), // Madden NFL 96 (USA, Europe)
+      @"c5e4b901ca41524c182e576bedb13981" : @(EA4WayPlay), // Madden NFL 97 (USA, Europe)
+      @"e3044f5de786cfa13f2d689e427f62e3" : @(EA4WayPlay), // Madden NFL 98 (USA)
+      @"87fd7645d1d8f2539a341285fc697aa7" : @(EA4WayPlay), // MLBPA Baseball (USA)
+      @"6a685a81ae70e8724c376779e3a812e4" : @(EA4WayPlay), // Mutant League Hockey (USA, Europe)
+      @"dbe3cb8f486debb2efb94b51ab33ae58" : @(EA4WayPlay), // NBA Live 95 (Korea)
+      @"c997ae89f3417f5b3e702c84cf1275c4" : @(EA4WayPlay), // NBA Live 95 (USA, Europe)
+      @"3a3399aba2f0c9eb693e9d2acc4f673b" : @(EA4WayPlay), // NBA Live 96 (USA, Europe)
+      @"2c11f642effca640c92a3031f6c2cbb1" : @(EA4WayPlay), // NBA Live 97 (USA, Europe)
+      @"3817138d9054d91675f7378684744a4d" : @(EA4WayPlay), // NBA Live 98 (USA)
+      @"9c3aeaa26c74dfae329602ee27d0c1f9" : @(EA4WayPlay), // NBA Showdown '94 (USA, Europe)
+      @"8356b3f0d091b9cc441e2ff8721ad063" : @(EA4WayPlay), // NHL '94 (USA, Europe)
+      @"94d3518a8e592563c78cf4da84d163c8" : @(EA4WayPlay), // NHL 95 (USA, Europe)
+      @"89e7e0fbe8db82b1f2dd7beafcc4e7fb" : @(EA4WayPlay), // NHL 96 (USA, Europe)
+      @"4ddc912038388de3818623c046890606" : @(EA4WayPlay), // NHL 97 (USA, Europe)
+      @"a2c92c09d420cf7c2d2e55e8777f3a31" : @(EA4WayPlay), // NHL 98 (USA)
+      @"d8575831aa3a753221a43aa574dd473b" : @(EA4WayPlay), // PGA European Tour (USA, Europe)
+      @"f65dc2d83128232e2da5cf569669083b" : @(EA4WayPlay), // PGA Tour 96 (USA, Europe)
+      @"96b3768461d6fef3c6ffa0a59e8de7b0" : @(EA4WayPlay), // PGA Tour Golf III (USA, Europe)
+      @"639c7a9083aba418f6cd38d7d68eddf0" : @(EA4WayPlay), // Rugby World Cup 95 (USA, Europe) (En,Fr,It)
+      @"c2967c23e72387743911bb28beb6f144" : @(EA4WayPlay), // Street Racer (Europe)
+      @"12ba891983dab9749bdaeb7dc8491de8" : @(EA4WayPlay), // Triple Play - Gold Edition (USA)
+      @"a214cbc398eb4e6962186bbd69144d9e" : @(EA4WayPlay), // Triple Play 96 (USA)
+      @"7841791f8e0d6cb6d776f7fcb338377f" : @(EA4WayPlay), // Wayne Gretzky and the NHLPA All-Stars (USA, Europe)
+      };
+
+    // Set six button controller override if needed
+    uint8_t pad;
+    if([pad6Buttons containsObject:[[self ROMMD5] lowercaseString]])
+        pad = DEVICE_PAD6B; // Force six button controller
+    else
+        pad = DEVICE_PAD2B | DEVICE_PAD3B | DEVICE_PAD6B; // Auto-detects by presence of '6' byte in the cart header (rominfo.peripherals & 2)
+
+    // Set multitap type configuration if detected
+    if (multiTapGames[[[self ROMMD5] lowercaseString]])
+    {
+        _multiTapType = [[multiTapGames objectForKey:[[self ROMMD5] lowercaseString]] integerValue];
+
+        // 1-4 players: TeamPlayer in Port 1
+        if (_multiTapType == TeamPlayerPort1)
+        {
+            input.system[0] = SYSTEM_TEAMPLAYER;
+            for (int i = 0; i < 4; i++)
+            {
+                config.input[i].padtype = pad;
+            }
+        }
+        // 1-4 players: Gamepad Port 1, TeamPlayer Port 2
+        else if (_multiTapType == GamepadPort1TeamPlayerPort2)
+        {
+            int port = 1; // Port 2
+            input.system[0] = SYSTEM_GAMEPAD;
+            input.system[1] = SYSTEM_TEAMPLAYER;
+            for (int i = 0; i < 4; i++)
+            {
+                config.input[port*4 + i].padtype = pad;
+            }
+        }
+        // 1-8 players: TeamPlayer in Port 1, TeamPlayer Port 2
+        else if (_multiTapType == TeamPlayerPort1TeamPlayerPort2)
+        {
+            input.system[0] = SYSTEM_TEAMPLAYER;
+            input.system[1] = SYSTEM_TEAMPLAYER;
+            for (int i = 0; i < MAX_INPUTS; i++)
+            {
+                config.input[i].padtype = pad;
+            }
+        }
+        // 1-4 players: EA 4-Way Play
+        else if(_multiTapType == EA4WayPlay)
+        {
+            input.system[0] = input.system[1] = SYSTEM_WAYPLAY;
+            for (int i = 0; i < 4; i++)
+            {
+                config.input[i].padtype = pad;
+            }
+        }
+    }
+    else
+    {
+        input.system[0] = SYSTEM_GAMEPAD;
+        input.system[1] = SYSTEM_GAMEPAD;
+        for (unsigned i = 0; i < 2; i++)
+        {
+            config.input[i].padtype = pad;
+        }
+    }
 }
 
 /************************************
