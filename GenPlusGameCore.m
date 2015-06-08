@@ -428,7 +428,7 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
 
 - (oneway void)didPushGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player;
 {
-    if (_multiTapType == GamepadPort1TeamPlayerPort2)
+    if (_multiTapType == GamepadPort1TeamPlayerPort2 || cart.special & HW_J_CART)
     {
         int offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] |= GenesisMap[button];
@@ -445,7 +445,7 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
 
 - (oneway void)didReleaseGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player;
 {
-    if (_multiTapType == GamepadPort1TeamPlayerPort2)
+    if (_multiTapType == GamepadPort1TeamPlayerPort2 || cart.special & HW_J_CART)
     {
         int offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] &= ~GenesisMap[button];
