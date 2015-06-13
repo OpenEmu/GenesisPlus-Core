@@ -152,6 +152,18 @@ static __weak GenPlusGameCore *_current;
     if (!load_rom((char *)[path UTF8String]))
         return NO;
 
+    // Force system region to Japan if user locale is Japan and the cart appears to be world/multi-region
+    if((strstr((const char*)rominfo.country, "EJ") ||
+        strstr((const char*)rominfo.country, "JE") ||
+        strstr((const char*)rominfo.country, "JU") ||
+        strstr((const char*)rominfo.country, "UJ") != NULL)
+       && [[self systemRegion] isEqualToString: @"Japan"])
+    {
+        config.region_detect = 3;
+        region_code = REGION_JAPAN_NTSC;
+        NSLog(@"GenesisPlusGX: Forcing region to Japan for multi-region cart");
+    }
+
     [self configureInput];
     audio_init(48000, vdp_pal ? pal_fps : ntsc_fps);
 
