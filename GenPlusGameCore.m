@@ -500,6 +500,67 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
         input.pad[(player-1) * 4] &= ~GenesisMap[button];
 }
 
+- (oneway void)mouseMovedAtPoint:(OEIntPoint)aPoint
+{
+    // TODO handle Sega Mouse
+
+    if (input.dev[4] == DEVICE_LIGHTGUN)
+    {
+        // Handle screen resolution changes
+        if (bitmap.viewport.w == 320)
+        {
+            input.analog[4][0] = aPoint.x;
+            input.analog[4][1] = aPoint.y * 0.933333;
+        }
+        else // w == 256
+        {
+            input.analog[4][0] = aPoint.x * 0.857143;
+            input.analog[4][1] = aPoint.y;
+        }
+    }
+}
+
+- (oneway void)leftMouseDownAtPoint:(OEIntPoint)aPoint
+{
+    if (input.dev[4] == DEVICE_LIGHTGUN)
+    {
+        [self mouseMovedAtPoint:aPoint];
+        input.pad[4] |= INPUT_A; // menacer button A / justifier trigger
+    }
+}
+
+- (oneway void)leftMouseUp
+{
+    if (input.dev[4] == DEVICE_LIGHTGUN)
+    {
+        input.pad[4] &= ~INPUT_A; // menacer button A / justifier trigger
+    }
+}
+
+- (oneway void)rightMouseDownAtPoint:(OEIntPoint)aPoint
+{
+    if (input.dev[4] == DEVICE_LIGHTGUN)
+    {
+        [self mouseMovedAtPoint:aPoint];
+
+        if (input.system[1] == SYSTEM_MENACER)
+            input.pad[4] |= INPUT_B; // menacer button B
+        else
+            input.pad[4] |= INPUT_START; // justifier start
+    }
+}
+
+- (oneway void)rightMouseUp
+{
+    if (input.dev[4] == DEVICE_LIGHTGUN)
+    {
+        if (input.system[1] == SYSTEM_MENACER)
+            input.pad[4] &= ~INPUT_B; // menacer button B
+        else
+            input.pad[4] &= ~INPUT_START; // justifier start
+    }
+}
+
 #pragma mark - Cheats
 
 - (void)setCheat:(NSString *)code setType:(NSString *)type setEnabled:(BOOL)enabled
@@ -820,7 +881,7 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
             }
         }
     }
-    else
+    else if(input.system[1] != SYSTEM_MENACER && input.system[1] != SYSTEM_JUSTIFIER)
     {
         input.system[0] = SYSTEM_GAMEPAD;
         input.system[1] = SYSTEM_GAMEPAD;
