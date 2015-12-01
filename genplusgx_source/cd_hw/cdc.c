@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  CD data controller (LC89510 compatible)
  *
- *  Copyright (C) 2012  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2012-2015  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -243,7 +243,7 @@ void cdc_dma_update(void)
   }
 }
 
-int cdc_decoder_update(uint32 header)
+void cdc_decoder_update(uint32 header)
 {
   /* data decoding enabled ? */
   if (cdc.ctrl[0] & BIT_DECEN)
@@ -274,7 +274,7 @@ int cdc_decoder_update(uint32 header)
     /* buffer RAM write enabled ? */
     if (cdc.ctrl[0] & BIT_WRRQ)
     {
-      uint16 offset;
+      int offset;
 
       /* increment block pointer  */
       cdc.pt.w += 2352;
@@ -292,19 +292,14 @@ int cdc_decoder_update(uint32 header)
       cdd_read_data(cdc.ram + 4 + offset);
 
       /* take care of buffer overrun */
-      if (offset > (0x4000 - 2048 - 4))
+      offset = offset + 2048 + 4 - 0x4000;
+      if (offset > 0)
       {
         /* data should be written at the start of buffer */
-        memcpy(cdc.ram, cdc.ram + 0x4000, offset + 2048 + 4 - 0x4000);
+        memcpy(cdc.ram, cdc.ram + 0x4000, offset);
       }
-
-      /* read next data block */
-      return 1;
     }
   }
-  
-  /* keep decoding same data block if Buffer Write is disabled */
-  return 0;
 }
 
 void cdc_reg_w(unsigned char data)
@@ -376,8 +371,8 @@ void cdc_reg_w(unsigned char data)
       /* start data transfer if data output is enabled */
       if (cdc.ifctrl & BIT_DOUTEN)
       {
-        /* set !DTBSY */
-        cdc.ifstat &= ~BIT_DTBSY;
+        /* set !DTBSY and !DTEN */
+        cdc.ifstat &= ~(BIT_DTBSY | BIT_DTEN);
 
         /* clear DBCH bits 4-7 */
         cdc.dbc.byte.h &= 0x0f;
@@ -391,10 +386,7 @@ void cdc_reg_w(unsigned char data)
           case 2: /* MAIN-CPU host read */
           case 3: /* SUB-CPU host read */
           {
-            /* set !DTEN */
-            cdc.ifstat &= ~BIT_DTEN;
-
-            /* set DSR bit (register $04) */
+            /* set DSR bit (SCD register $04) */
             scd.regs[0x04>>1].byte.h |= 0x40;
             break;
           }
@@ -645,7 +637,7 @@ unsigned char cdc_reg_r(void)
 unsigned short cdc_host_r(void)
 {
   /* check if data is available */
-  if (!(cdc.ifstat & BIT_DTEN))
+  if (scd.regs[0x04>>1].byte.h & 0x40)
   {
     /* read data word from CDC RAM buffer */
     uint16 data = *(uint16 *)(cdc.ram + (cdc.dac.w & 0x3ffe));

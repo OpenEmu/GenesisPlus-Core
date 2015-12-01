@@ -1,11 +1,9 @@
 /***************************************************************************************
  *  Genesis Plus
- *  Virtual System emulation
+ *  8-bit & 16-bit (with & without CD) systems emulation
  *
- *  Support for "Genesis", "Genesis + CD" & "Master System" modes
- *
- *  Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2014  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 1998-2003  Charles Mac Donald (original code)
+ *  Copyright (C) 2007-2015  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -106,6 +104,7 @@ extern uint32 system_clock;
 
 /* Function prototypes */
 extern int audio_init(int samplerate, double framerate);
+extern void audio_set_rate(int samplerate, double framerate);
 extern void audio_reset(void);
 extern void audio_shutdown(void);
 extern int audio_update(int16 *buffer);

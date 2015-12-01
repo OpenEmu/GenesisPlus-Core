@@ -5,7 +5,7 @@
  *  Support for SG-1000, Mark-III, Master System, Game Gear & Mega Drive ports access
  *
  *  Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2014  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2015  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -251,9 +251,10 @@ void z80_md_port_w(unsigned int port, unsigned char data)
     {
       port &= 0xFF;
 
+      /* write FM chip if enabled */
       if ((port >= 0xF0) && (config.ym2413 & 1))
       {
-        fm_write(Z80.cycles, port&3, data);
+        fm_write(Z80.cycles, port, data);
         return;
       }
 
@@ -299,7 +300,7 @@ unsigned char z80_md_port_r(unsigned int port)
       /* read FM chip if enabled */
       if ((port >= 0xF0) && (config.ym2413 & 1))
       {
-        return YM2413Read(port & 3); 
+        return YM2413Read(); 
       }
 
       return z80_unused_port_r(port);
@@ -328,12 +329,16 @@ void z80_gg_port_w(unsigned int port, unsigned char data)
           io_gg_write(port, data);
           return;
         }
+      }
 
-        z80_unused_port_w(port & 0xFF, data);
+      /* full address range is decoded by Game Gear I/O chip (fixes G-LOC Air Battle) */
+      else if ((port == 0x3E) || (port == 0x3F))
+      {
+        io_z80_write(port & 1, data, Z80.cycles + SMS_CYCLE_OFFSET);
         return;
       }
 
-      io_z80_write(port & 1, data, Z80.cycles + SMS_CYCLE_OFFSET);
+      z80_unused_port_w(port, data);
       return;
     }
 
@@ -408,6 +413,7 @@ unsigned char z80_gg_port_r(unsigned int port)
     {
       port &= 0xFF;
 
+      /* full address range is decoded by Game Gear I/O chip */
       if ((port == 0xC0) || (port == 0xC1) || (port == 0xDC) || (port == 0xDD))
       {
         return io_z80_read(port & 1);
@@ -431,13 +437,13 @@ void z80_ms_port_w(unsigned int port, unsigned char data)
     case 0x01:
     {
       /* full address range is decoded by 315-5297 I/O chip (fixes Super Tetris / Power Boggle Boggle) */
-      if ((region_code == REGION_JAPAN_NTSC) && ((port & 0xFE) != 0x3E))
+      if ((region_code != REGION_JAPAN_NTSC) || ((port & 0xFE) == 0x3E))
       {
-        z80_unused_port_w(port & 0xFF, data);
+        io_z80_write(port & 1, data, Z80.cycles + SMS_CYCLE_OFFSET);
         return;
       }
 
-      io_z80_write(port & 1, data, Z80.cycles + SMS_CYCLE_OFFSET);
+      z80_unused_port_w(port & 0xFF, data);
       return;
     }
 
@@ -462,9 +468,17 @@ void z80_ms_port_w(unsigned int port, unsigned char data)
 
     default:
     {
+      /* write FM chip if enabled */
       if (!(port & 4) && (config.ym2413 & 1))
       {
-        fm_write(Z80.cycles, port & 3, data);
+        fm_write(Z80.cycles, port, data);
+
+        /* 315-5297 I/O chip decodes bit 1 to enable/disable PSG output */
+        if (region_code == REGION_JAPAN_NTSC)
+        {
+          io_reg[6] = (data & 2) ? 0xFF : 0x00;
+          SN76489_Config(Z80.cycles, config.psg_preamp, config.psgBoostNoise, io_reg[6]);
+        }
         return;
       }
 
@@ -506,27 +520,27 @@ unsigned char z80_ms_port_r(unsigned int port)
 
     default:
     {
+      uint8 data = 0xFF;
+
       /* read FM chip if enabled */
       if (!(port & 4) && (config.ym2413 & 1))
       {
-        /* check if I/O ports are disabled */
-        if (io_reg[0x0E] & 0x04)
+        data = YM2413Read();
+
+        /* 315-5297 I/O chip decodes full address range */
+        if (region_code == REGION_JAPAN_NTSC)
         {
-          return YM2413Read(port & 3);
-        }
-        else
-        {
-          return YM2413Read(port & 3) & io_z80_read(port & 1);
+          return data;
         }
       }
 
-      /* check if I/O ports are enabled */
+      /* read I/O ports if enabled */
       if (!(io_reg[0x0E] & 0x04))
       {
-        return io_z80_read(port & 1);
+        data &= io_z80_read(port & 1);
       }
 
-      return z80_unused_port_r(port & 0xFF);
+      return data;
     }
   }
 }
@@ -543,7 +557,7 @@ void z80_m3_port_w(unsigned int port, unsigned char data)
     case 0x00:
     case 0x01:
     {
-      z80_unused_port_w(port, data);
+      z80_unused_port_w(port & 0xFF, data);
       return;
     }
 
@@ -568,9 +582,10 @@ void z80_m3_port_w(unsigned int port, unsigned char data)
 
     default:
     {
+      /* write FM chip if enabled */
       if (!(port & 4) && (config.ym2413 & 1))
       {
-        fm_write(Z80.cycles, port & 3, data);
+        fm_write(Z80.cycles, port, data);
         return;
       }
 
@@ -615,8 +630,8 @@ unsigned char z80_m3_port_r(unsigned int port)
       /* read FM chip if enabled */
       if (!(port & 4) && (config.ym2413 & 1))
       {
-        /* I/O ports are automatically disabled */
-        return YM2413Read(port & 3);
+        /* I/O ports are automatically disabled by hardware */
+        return YM2413Read();
       }
 
       /* read I/O ports   */
@@ -638,6 +653,9 @@ void z80_sg_port_w(unsigned int port, unsigned char data)
     case 0x41:
     {
       SN76489_Write(Z80.cycles, data);
+
+      /* Z80 !WAIT input is tied to SN76489AN chip READY pin (held low for 32 clocks after each write access) */
+      Z80.cycles += (32 * 15);
       return;
     }
 
@@ -683,7 +701,7 @@ unsigned char z80_sg_port_r(unsigned int port)
 
     default:
     {
-      return z80_unused_port_r(port);
+      return z80_unused_port_r(port & 0xFF);
     }
   }
 }

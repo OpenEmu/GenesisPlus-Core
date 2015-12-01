@@ -196,11 +196,6 @@ static __weak GenPlusGameCore *_current;
 
 - (void)executeFrame
 {
-    [self executeFrameSkippingFrame:NO];
-}
-
-- (void)executeFrameSkippingFrame:(BOOL)skip
-{
     if (system_hw == SYSTEM_MCD)
         system_frame_scd(0);
     else if ((system_hw & SYSTEM_PBC) == SYSTEM_MD)
@@ -656,6 +651,7 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
     config.overscan = 0; /* 3 == FULL */
     config.gg_extra = 0; /* 1 = show extended Game Gear screen (256x192) */
     config.ntsc     = 0;
+    config.lcd      = 0;
     config.render   = 0;
 
     /* initialize bitmap */

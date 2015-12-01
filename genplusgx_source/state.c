@@ -51,8 +51,8 @@ int state_load(unsigned char *state)
     return 0;
   }
 
-  /* version check (keep compatibility with previous & current state version) */
-  if ((version[11] < 0x31) || (version[13] < 0x37) || (version[15] < 0x31))
+  /* version check */
+  if ((version[11] < 0x31) || (version[13] < 0x37) || (version[15] < 0x35))
   {
     return 0;
   }
@@ -110,18 +110,16 @@ int state_load(unsigned char *state)
   }
 
   /* VDP */
-  bufferptr += vdp_context_load(&state[bufferptr], version[15]);
+  bufferptr += vdp_context_load(&state[bufferptr]);
 
   /* SOUND */
   bufferptr += sound_context_load(&state[bufferptr]);
   if ((system_hw & SYSTEM_PBC) == SYSTEM_MD)
   {
-    SN76489_Init(snd.blips[0][0], snd.blips[0][1], SN_INTEGRATED);
     SN76489_Config(0, config.psg_preamp, config.psgBoostNoise, 0xff);
   }
   else
   {
-    SN76489_Init(snd.blips[0][0], snd.blips[0][1], (system_hw == SYSTEM_SG) ? SN_DISCRETE : SN_INTEGRATED);
     SN76489_Config(0, config.psg_preamp, config.psgBoostNoise, io_reg[6]);
   }
 

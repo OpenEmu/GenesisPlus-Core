@@ -1,8 +1,8 @@
 /***************************************************************************************
  *  Genesis Plus
- *  CD compatible ROM/RAM cartridge support
+ *  Sega Graphic Board support
  *
- *  Copyright (C) 2012-2015 Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2014  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -35,17 +35,77 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************************/
- 
 
- /* CD compatible ROM/RAM cartridge */
-typedef struct 
+#include "shared.h"
+
+static struct
 {
-  uint8 area[0x840000];  /* cartridge ROM/RAM area (max. 8MB ROM / 64KB backup memory + Pro Action Replay 128KB ROM / 64KB RAM) */
-  uint8 boot;            /* cartridge boot mode (0x00: boot from CD with ROM/RAM cartridge enabled, 0x40: boot from ROM cartridge with CD enabled) */
-  uint8 id;              /* RAM cartridge ID (related to RAM size, 0 if disabled) */
-  uint8 prot;            /* RAM cartridge write protection */
-  uint32 mask;           /* RAM cartridge size mask */
-} cd_cart_t;
+  uint8 State;
+  uint8 Counter;
+  uint8 Port;
+} board;
 
-/* Function prototypes */
-extern void cd_cart_init(void);
+void graphic_board_reset(int port)
+{
+  input.analog[0][0] = 128;
+  input.analog[0][1] = 128;
+  board.State = 0x7f;
+  board.Counter = 0;
+  board.Port = port;
+}
+
+unsigned char graphic_board_read(void)
+{
+  uint8 data;
+
+  if (board.State & 0x20)
+  {
+    return 0x60;
+  }
+
+  switch (board.Counter & 7)
+  {
+    case 0:
+      data = ~input.pad[board.Port];
+      break;
+    case 1:
+      data = 0x0f;
+      break;
+    case 2:
+      data = 0x0f;
+      break;
+    case 3:
+      data = input.analog[board.Port][0] >> 4;
+      break;
+    case 4:
+      data = input.analog[board.Port][0];
+      break;
+    case 5:
+      data = input.analog[board.Port][1] >> 4;
+      break;
+    case 6:
+      data = input.analog[board.Port][1];
+      break;
+    case 7:
+      data = 0x0f;
+      break;
+  }
+
+  return (board.State & ~0x1f) | (data  & 0x0f);
+}
+
+void graphic_board_write(unsigned char data, unsigned char mask)
+{
+  data = (board.State & ~mask) | (data & mask);
+
+  if ((data ^ board.State) & 0x20)
+  {
+    board.Counter = 0;
+  }
+  else if ((data ^ board.State) & 0x40)
+  {
+    board.Counter++;
+  }
+
+  board.State = data;
+}

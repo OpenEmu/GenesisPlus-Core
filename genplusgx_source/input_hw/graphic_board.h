@@ -1,8 +1,8 @@
 /***************************************************************************************
  *  Genesis Plus
- *  CD compatible ROM/RAM cartridge support
+ *  Sega Graphic board support
  *
- *  Copyright (C) 2012-2015 Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2017 Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -35,17 +35,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************************/
- 
 
- /* CD compatible ROM/RAM cartridge */
-typedef struct 
-{
-  uint8 area[0x840000];  /* cartridge ROM/RAM area (max. 8MB ROM / 64KB backup memory + Pro Action Replay 128KB ROM / 64KB RAM) */
-  uint8 boot;            /* cartridge boot mode (0x00: boot from CD with ROM/RAM cartridge enabled, 0x40: boot from ROM cartridge with CD enabled) */
-  uint8 id;              /* RAM cartridge ID (related to RAM size, 0 if disabled) */
-  uint8 prot;            /* RAM cartridge write protection */
-  uint32 mask;           /* RAM cartridge size mask */
-} cd_cart_t;
+#ifndef _GRAPHIC_H_
+#define _GRAPHIC_H_
 
 /* Function prototypes */
-extern void cd_cart_init(void);
+extern void graphic_board_reset(int port);
+extern unsigned char graphic_board_read(void);
+extern void graphic_board_write(unsigned char data, unsigned char mask);
+
+#endif

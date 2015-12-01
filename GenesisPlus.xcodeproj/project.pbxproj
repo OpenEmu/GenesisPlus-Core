@@ -35,8 +35,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		82287C09101E9C2C0072172D /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 82287C08101E9C2C0072172D /* libz.dylib */; };
 		82287C39101E9DB40072172D /* GenPlusGameCore.m in Sources */ = {isa = PBXBuildFile; fileRef = 82287C34101E9DB40072172D /* GenPlusGameCore.m */; };
+		879243AE1C0D044B0064C515 /* xe_1ap.c in Sources */ = {isa = PBXBuildFile; fileRef = 879243AC1C0D044B0064C515 /* xe_1ap.c */; };
+		879243B11C0D05120064C515 /* graphic_board.c in Sources */ = {isa = PBXBuildFile; fileRef = 879243AF1C0D05120064C515 /* graphic_board.c */; };
 		87E0514D1B18092700E870E1 /* scrc32.c in Sources */ = {isa = PBXBuildFile; fileRef = 87E0514B1B18092700E870E1 /* scrc32.c */; };
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
@@ -71,7 +72,6 @@
 		94ED8B1F14CF933800FF8901 /* paddle.c in Sources */ = {isa = PBXBuildFile; fileRef = 94ED8A2014CF933700FF8901 /* paddle.c */; };
 		94ED8B2014CF933800FF8901 /* sportspad.c in Sources */ = {isa = PBXBuildFile; fileRef = 94ED8A2214CF933700FF8901 /* sportspad.c */; };
 		94ED8B2114CF933800FF8901 /* teamplayer.c in Sources */ = {isa = PBXBuildFile; fileRef = 94ED8A2414CF933700FF8901 /* teamplayer.c */; };
-		94ED8B2214CF933800FF8901 /* xe_a1p.c in Sources */ = {isa = PBXBuildFile; fileRef = 94ED8A2614CF933700FF8901 /* xe_a1p.c */; };
 		94ED8B2314CF933800FF8901 /* io_ctrl.c in Sources */ = {isa = PBXBuildFile; fileRef = 94ED8A2814CF933700FF8901 /* io_ctrl.c */; };
 		94ED8B2414CF933800FF8901 /* loadrom.c in Sources */ = {isa = PBXBuildFile; fileRef = 94ED8A2A14CF933700FF8901 /* loadrom.c */; };
 		94ED8B2514CF933800FF8901 /* m68kcpu.c in Sources */ = {isa = PBXBuildFile; fileRef = 94ED8A2F14CF933700FF8901 /* m68kcpu.c */; };
@@ -134,6 +134,10 @@
 		82287C33101E9DB40072172D /* GenPlusGameCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GenPlusGameCore.h; sourceTree = "<group>"; };
 		82287C34101E9DB40072172D /* GenPlusGameCore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GenPlusGameCore.m; sourceTree = "<group>"; };
 		825C7E44101FAB7F0072187B /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		879243AC1C0D044B0064C515 /* xe_1ap.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xe_1ap.c; sourceTree = "<group>"; };
+		879243AD1C0D044B0064C515 /* xe_1ap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xe_1ap.h; sourceTree = "<group>"; };
+		879243AF1C0D05120064C515 /* graphic_board.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = graphic_board.c; sourceTree = "<group>"; };
+		879243B01C0D05120064C515 /* graphic_board.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = graphic_board.h; sourceTree = "<group>"; };
 		87E0514A1B18092700E870E1 /* osd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = osd.h; sourceTree = "<group>"; };
 		87E0514B1B18092700E870E1 /* scrc32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = scrc32.c; sourceTree = "<group>"; };
 		87E0514C1B18092700E870E1 /* scrc32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scrc32.h; sourceTree = "<group>"; };
@@ -200,8 +204,6 @@
 		94ED8A2314CF933700FF8901 /* sportspad.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sportspad.h; sourceTree = "<group>"; };
 		94ED8A2414CF933700FF8901 /* teamplayer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = teamplayer.c; sourceTree = "<group>"; };
 		94ED8A2514CF933700FF8901 /* teamplayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = teamplayer.h; sourceTree = "<group>"; };
-		94ED8A2614CF933700FF8901 /* xe_a1p.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xe_a1p.c; sourceTree = "<group>"; };
-		94ED8A2714CF933700FF8901 /* xe_a1p.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xe_a1p.h; sourceTree = "<group>"; };
 		94ED8A2814CF933700FF8901 /* io_ctrl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = io_ctrl.c; sourceTree = "<group>"; };
 		94ED8A2914CF933700FF8901 /* io_ctrl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = io_ctrl.h; sourceTree = "<group>"; };
 		94ED8A2A14CF933700FF8901 /* loadrom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 2; path = loadrom.c; sourceTree = "<group>"; };
@@ -261,9 +263,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */,
-				82287C09101E9C2C0072172D /* libz.dylib in Frameworks */,
 				C6D120F2171130E700E868A8 /* OpenEmuBase.framework in Frameworks */,
+				8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -452,6 +453,8 @@
 				94ED8A1714CF933700FF8901 /* activator.h */,
 				94ED8A1814CF933700FF8901 /* gamepad.c */,
 				94ED8A1914CF933700FF8901 /* gamepad.h */,
+				879243AF1C0D05120064C515 /* graphic_board.c */,
+				879243B01C0D05120064C515 /* graphic_board.h */,
 				94ED8A1A14CF933700FF8901 /* input.c */,
 				94ED8A1B14CF933700FF8901 /* input.h */,
 				94ED8A1C14CF933700FF8901 /* lightgun.c */,
@@ -466,8 +469,8 @@
 				94ED8A2514CF933700FF8901 /* teamplayer.h */,
 				948DA2B415AB93FA00C0EA78 /* terebi_oekaki.c */,
 				948DA2B515AB93FA00C0EA78 /* terebi_oekaki.h */,
-				94ED8A2614CF933700FF8901 /* xe_a1p.c */,
-				94ED8A2714CF933700FF8901 /* xe_a1p.h */,
+				879243AC1C0D044B0064C515 /* xe_1ap.c */,
+				879243AD1C0D044B0064C515 /* xe_1ap.h */,
 			);
 			path = input_hw;
 			sourceTree = "<group>";
@@ -633,6 +636,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				82287C39101E9DB40072172D /* GenPlusGameCore.m in Sources */,
+				879243B11C0D05120064C515 /* graphic_board.c in Sources */,
 				94ED8A9214CF933700FF8901 /* areplay.c in Sources */,
 				94ED8A9414CF933700FF8901 /* ggenie.c in Sources */,
 				94ED8A9514CF933700FF8901 /* md_cart.c in Sources */,
@@ -655,10 +659,10 @@
 				94ED8B2014CF933800FF8901 /* sportspad.c in Sources */,
 				94ED8B2114CF933800FF8901 /* teamplayer.c in Sources */,
 				948DA2B615AB93FA00C0EA78 /* terebi_oekaki.c in Sources */,
-				94ED8B2214CF933800FF8901 /* xe_a1p.c in Sources */,
 				94ED8A9C14CF933700FF8901 /* genesis.c in Sources */,
 				94ED8B2314CF933800FF8901 /* io_ctrl.c in Sources */,
 				94ED8B2414CF933800FF8901 /* loadrom.c in Sources */,
+				879243AE1C0D044B0064C515 /* xe_1ap.c in Sources */,
 				94ED8B2814CF933800FF8901 /* mem68k.c in Sources */,
 				94ED8B2914CF933800FF8901 /* membnk.c in Sources */,
 				94ED8B2A14CF933800FF8901 /* memz80.c in Sources */,
@@ -714,23 +718,10 @@
 		1DEB913B08733D840010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				HEADER_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../OpenEmu\"/**",
-					"\"$(SRCROOT)/openemu\"/**",
-					"\"$(SRCROOT)/genplusgx_source\"/**",
-					"\"$(SRCROOT)/genplusgx_source/sound\"/**",
-					"\"$(SRCROOT)/genplusgx_source/input_hw\"/**",
-					"\"$(SRCROOT)/genplusgx_source/cart_hw\"/**",
-					"\"$(SRCROOT)/genplusgx_source/cd_hw\"/**",
-					"\"$(SRCROOT)/genplusgx_source/cart_hw/svp\"/**",
-					"\"$(SRCROOT)/genplusgx_source/m68k\"/**",
-					"\"$(SRCROOT)/genplusgx_source/z80\"/**",
-					"\"$(SRCROOT)/genplusgx_source/ntsc\"/**",
-				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
 				OTHER_CFLAGS = (
@@ -740,7 +731,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.openemu.${PRODUCT_NAME:identifier}";
 				PRODUCT_NAME = GenesisPlus;
 				SKIP_INSTALL = YES;
-				USER_HEADER_SEARCH_PATHS = "\"$(PROJECT_DIR)\"";
 				WRAPPER_EXTENSION = oecoreplugin;
 			};
 			name = Debug;
@@ -748,23 +738,10 @@
 		1DEB913C08733D840010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				HEADER_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../OpenEmu\"/**",
-					"\"$(SRCROOT)/openemu\"/**",
-					"\"$(SRCROOT)/genplusgx_source\"/**",
-					"\"$(SRCROOT)/genplusgx_source/sound\"/**",
-					"\"$(SRCROOT)/genplusgx_source/input_hw\"/**",
-					"\"$(SRCROOT)/genplusgx_source/cart_hw\"/**",
-					"\"$(SRCROOT)/genplusgx_source/cd_hw\"/**",
-					"\"$(SRCROOT)/genplusgx_source/cart_hw/svp\"/**",
-					"\"$(SRCROOT)/genplusgx_source/m68k\"/**",
-					"\"$(SRCROOT)/genplusgx_source/z80\"/**",
-					"\"$(SRCROOT)/genplusgx_source/ntsc\"/**",
-				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
 				OTHER_CFLAGS = (
@@ -774,7 +751,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.openemu.${PRODUCT_NAME:identifier}";
 				PRODUCT_NAME = GenesisPlus;
 				SKIP_INSTALL = YES;
-				USER_HEADER_SEARCH_PATHS = "\"$(PROJECT_DIR)\"";
 				WRAPPER_EXTENSION = oecoreplugin;
 			};
 			name = Release;

@@ -4,8 +4,8 @@
  *
  *  Support for all TMS99xx modes, Mode 4 & Mode 5 rendering
  *
- *  Copyright (C) 1998-2007  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2013  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003  Charles Mac Donald (original code)
+ *  Copyright (C) 2007-2015  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -41,6 +41,62 @@
 
 #ifndef _RENDER_H_
 #define _RENDER_H_
+
+/* 3:3:2 RGB */
+#if defined(USE_8BPP_RENDERING)
+#define PIXEL(r,g,b) (((r) << 5) | ((g) << 2) | (b))
+#define GET_R(pixel) (((pixel) & 0xe0) >> 5)
+#define GET_G(pixel) (((pixel) & 0x1c) >> 2)
+#define GET_B(pixel) (((pixel) & 0x03) >> 0)
+
+/* 5:5:5 RGB */
+#elif defined(USE_15BPP_RENDERING)
+#if defined(USE_ABGR)
+#define PIXEL(r,g,b) ((1 << 15) | ((b) << 10) | ((g) << 5) | (r))
+#define GET_B(pixel) (((pixel) & 0x7c00) >> 10)
+#define GET_G(pixel) (((pixel) & 0x03e0) >> 5)
+#define GET_R(pixel) (((pixel) & 0x001f) >> 0)
+#else
+#define PIXEL(r,g,b) ((1 << 15) | ((r) << 10) | ((g) << 5) | (b))
+#define GET_R(pixel) (((pixel) & 0x7c00) >> 10)
+#define GET_G(pixel) (((pixel) & 0x03e0) >> 5)
+#define GET_B(pixel) (((pixel) & 0x001f) >> 0)
+#endif
+
+/* 5:6:5 RGB */
+#elif defined(USE_16BPP_RENDERING)
+#define PIXEL(r,g,b) (((r) << 11) | ((g) << 5) | (b))
+#define GET_R(pixel) (((pixel) & 0xf800) >> 11)
+#define GET_G(pixel) (((pixel) & 0x07e0) >> 5)
+#define GET_B(pixel) (((pixel) & 0x001f) >> 0)
+
+/* 8:8:8 RGB */
+#elif defined(USE_32BPP_RENDERING)
+#define PIXEL(r,g,b) ((0xff << 24) | ((r) << 16) | ((g) << 8) | (b))
+#define GET_R(pixel) (((pixel) & 0xff0000) >> 16)
+#define GET_G(pixel) (((pixel) & 0x00ff00) >> 8)
+#define GET_B(pixel) (((pixel) & 0x0000ff) >> 0)
+#endif
+
+/* LCD image persistence (ghosting) filter */
+/* Simulates (roughly) the slow decay response time of passive-matrix LCD */
+/* Rate value is formatted as 0.8 fixed-point integer (between 0.0 and 0.99609375), a higher value meaning a slower decay */
+/* Required for proper display of some effects in a few Game Gear games (James Pond 3, Power Drift, Super Monaco GP II,...) */
+#define RENDER_PIXEL_LCD(in,out,table,rate) \
+{ \
+  PIXEL_OUT_T pixel_out = table[*in++]; \
+  PIXEL_OUT_T pixel_old  = *out; \
+  uint8 r = GET_R(pixel_out); \
+  uint8 g = GET_G(pixel_out); \
+  uint8 b = GET_B(pixel_out); \
+  int r_decay = GET_R(pixel_old) - r; \
+  int g_decay = GET_G(pixel_old) - g; \
+  int b_decay = GET_B(pixel_old) - b; \
+  if (r_decay > 0) r += (rate * r_decay) >> 8; \
+  if (g_decay > 0) g += (rate * g_decay) >> 8; \
+  if (b_decay > 0) b += (rate * b_decay) >> 8; \
+  *out++ = PIXEL(r,g,b); \
+}
 
 /* Global variables */
 extern uint16 spr_col;
@@ -85,4 +141,3 @@ extern void (*parse_satb)(int line);
 extern void (*update_bg_pattern_cache)(int index);
 
 #endif /* _RENDER_H_ */
-

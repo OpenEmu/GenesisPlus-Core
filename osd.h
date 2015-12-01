@@ -54,6 +54,7 @@ struct
     uint8 overscan;
     uint8 gg_extra;
     uint8 ntsc;
+    uint8 lcd;
     uint8 render;
     t_input_config input[MAX_INPUTS];
 } config;

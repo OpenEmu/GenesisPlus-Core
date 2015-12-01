@@ -2,8 +2,8 @@
  *  Genesis Plus
  *  Input peripherals support
  *
- *  Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2014  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 1998-2003  Charles Mac Donald (original code)
+ *  Copyright (C) 2007-2015  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -42,11 +42,12 @@
 #include "lightgun.h"
 #include "mouse.h"
 #include "activator.h"
-#include "xe_a1p.h"
+#include "xe_1ap.h"
 #include "teamplayer.h"
 #include "paddle.h"
 #include "sportspad.h"
 #include "terebi_oekaki.h"
+#include "graphic_board.h"
 
 t_input input;
 int old_system[2] = {-1,-1};
@@ -120,9 +121,9 @@ void input_init(void)
       break;
     }
 
-    case SYSTEM_XE_A1P:
+    case SYSTEM_XE_1AP:
     {
-      input.dev[0] = DEVICE_XE_A1P;
+      input.dev[0] = DEVICE_XE_1AP;
       player++;
       break;
     }
@@ -203,6 +204,13 @@ void input_init(void)
       player++;
       break;
     }
+
+    case SYSTEM_GRAPHIC_BOARD:
+    {
+      input.dev[0] = DEVICE_GRAPHIC_BOARD;
+      player++;
+      break;
+    }
   }
 
   if (player == MAX_INPUTS)
@@ -240,9 +248,9 @@ void input_init(void)
       break;
     }
 
-    case SYSTEM_XE_A1P:
+    case SYSTEM_XE_1AP:
     {
-      input.dev[4] = DEVICE_XE_A1P;
+      input.dev[4] = DEVICE_XE_1AP;
       player++;
       break;
     }
@@ -322,6 +330,13 @@ void input_init(void)
       player++;
       break;
     }
+
+    case SYSTEM_GRAPHIC_BOARD:
+    {
+      input.dev[4] = DEVICE_GRAPHIC_BOARD;
+      player++;
+      break;
+    }
   }
 
   /* J-CART */
@@ -381,9 +396,9 @@ void input_reset(void)
         break;
       }
 
-      case DEVICE_XE_A1P:
+      case DEVICE_XE_1AP:
       {
-        xe_a1p_reset(i);
+        xe_1ap_reset(i);
         break;
       }
 
@@ -402,6 +417,12 @@ void input_reset(void)
       case DEVICE_TEREBI:
       {
         terebi_oekaki_reset();
+        break;
+      }
+
+      case DEVICE_GRAPHIC_BOARD:
+      {
+        graphic_board_reset(i);
         break;
       }
 

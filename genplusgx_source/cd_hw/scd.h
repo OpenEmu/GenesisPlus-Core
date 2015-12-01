@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  Mega CD / Sega CD hardware
  *
- *  Copyright (C) 2012-2013  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2012-2015  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -44,7 +44,11 @@
 #include "pcm.h"
 #include "cd_cart.h"
 
+#ifdef USE_DYNAMIC_ALLOC
+#define scd ext->cd_hw
+#else
 #define scd ext.cd_hw
+#endif
 
 /* 5000000 SCD clocks/s = ~3184 clocks/line with a Master Clock of 53.693175 MHz */
 /* This would be slightly (~30 clocks) more on PAL systems because of the slower */
