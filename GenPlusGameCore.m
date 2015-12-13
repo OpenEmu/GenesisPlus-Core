@@ -367,25 +367,19 @@ static __weak GenPlusGameCore *_current;
 - (NSData *)serializeStateWithError:(NSError **)outError
 {
     size_t length = STATE_SIZE;
-    void *bytes = malloc(length);
-    if(state_save(bytes))
-    {
-        return [NSData dataWithBytesNoCopy:bytes length:length];
+    NSMutableData *data = [NSMutableData dataWithLength:length];
+
+    if(state_save(data.mutableBytes))
+        return data;
+
+    if (outError) {
+        *outError = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreCouldNotSaveStateError userInfo:@{
+            NSLocalizedDescriptionKey : @"Save state data could not be written",
+            NSLocalizedRecoverySuggestionErrorKey : @"The emulator could not write the state data."
+        }];
     }
-    else
-    {
-        NSError *error = [NSError errorWithDomain:OEGameCoreErrorDomain
-                                             code:OEGameCoreCouldNotSaveStateError
-                                         userInfo:@{
-                                                    NSLocalizedDescriptionKey : @"Save state data could not be written",
-                                                    NSLocalizedRecoverySuggestionErrorKey : @"The emulator could not write the state data."
-                                                    }];
-        if(outError)
-        {
-            *outError = error;
-        }
-        return nil;
-    }
+
+    return nil;
 }
 
 - (BOOL)deserializeState:(NSData *)state withError:(NSError **)outError
@@ -394,39 +388,28 @@ static __weak GenPlusGameCore *_current;
     size_t length = [state length];
     size_t serialSize = STATE_SIZE;
 
-    if(serialSize != length)
-    {
-        NSError *error = [NSError errorWithDomain:OEGameCoreErrorDomain
-                                             code:OEGameCoreStateHasWrongSizeError
-                                         userInfo:@{
-                                                    NSLocalizedDescriptionKey : @"Save state has wrong file size.",
-                                                    NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The size of the save state does not have the right size, %lu expected, got: %ld.", serialSize, [state length]],
-                                                    }];
-        if(outError)
-        {
-            *outError = error;
+    if(serialSize != length) {
+        if (outError) {
+            *outError = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreStateHasWrongSizeError userInfo:@{
+                NSLocalizedDescriptionKey : @"Save state has wrong file size.",
+                NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The size of the save state does not have the right size, %lu expected, got: %ld.", serialSize, [state length]],
+            }];
         }
+
         return NO;
     }
 
     if(state_load((uint8_t *)bytes))
-    {
         return YES;
+
+    if (outError) {
+        *outError = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreCouldNotLoadStateError userInfo:@{
+            NSLocalizedDescriptionKey : @"The save state data could not be read",
+            NSLocalizedRecoverySuggestionErrorKey : @"Could not load data from the save state"
+        }];
     }
-    else
-    {
-        NSError *error = [NSError errorWithDomain:OEGameCoreErrorDomain
-                                             code:OEGameCoreCouldNotLoadStateError
-                                         userInfo:@{
-                                                    NSLocalizedDescriptionKey : @"The save state data could not be read",
-                                                    NSLocalizedRecoverySuggestionErrorKey : @"Could not load data from the save state"
-                                                    }];
-        if(outError)
-        {
-            *outError = error;
-        }
-        return NO;
-    }
+
+    return NO;
 }
 
 # pragma mark - Input
