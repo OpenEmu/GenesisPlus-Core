@@ -1,9 +1,11 @@
 /***************************************************************************************
  *  Genesis Plus
- *  8-bit & 16-bit (with & without CD) systems emulation
+ *  Virtual System emulation
+ *
+ *  Support for 16-bit & 8-bit hardware modes
  *
  *  Copyright (C) 1998-2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2015  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2016  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -421,6 +423,9 @@ void system_frame_gen(int do_skip)
       bitmap.viewport.y = (config.overscan & 1) * 24 * (vdp_pal + 1);
     }
 
+    /* active screen width */
+    bitmap.viewport.w = 256 + ((reg[12] & 0x01) << 6);
+
     /* check viewport changes */
     if (bitmap.viewport.h != bitmap.viewport.oh)
     {
@@ -476,12 +481,6 @@ void system_frame_gen(int do_skip)
   /* refresh inputs just before VINT (Warriors of Eternal Sun) */
   osd_input_update();
 
-  /* delay between VINT flag & Vertical Interrupt (Ex-Mutants, Tyrant) */
-  m68k_run(588);
-  
-  /* set VINT flag */
-  status |= 0x80;
-
   /* delay between VBLANK flag & Vertical Interrupt (Dracula, OutRunners, VR Troopers) */
   m68k_run(788);
   if (zstate == 1)
@@ -492,6 +491,9 @@ void system_frame_gen(int do_skip)
   {
     Z80.cycles = 788;
   }
+
+  /* set VINT flag */
+  status |= 0x80;
 
   /* Vertical Interrupt */
   vint_pending = 0x20;
@@ -708,7 +710,8 @@ void system_frame_gen(int do_skip)
     bitmap.viewport.changed |= 1;
   }
 
-  /* adjust CPU cycle counters for next frame */
+  /* adjust timings for next frame */
+  input_end_frame(mcycles_vdp);
   m68k.cycles -= mcycles_vdp;
   Z80.cycles -= mcycles_vdp;
 }
@@ -789,6 +792,9 @@ void system_frame_scd(int do_skip)
       bitmap.viewport.y = (config.overscan & 1) * 24 * (vdp_pal + 1);
     }
 
+    /* active screen width */
+    bitmap.viewport.w = 256 + ((reg[12] & 0x01) << 6);
+
     /* check viewport changes */
     if (bitmap.viewport.h != bitmap.viewport.oh)
     {
@@ -844,12 +850,6 @@ void system_frame_scd(int do_skip)
   /* refresh inputs just before VINT */
   osd_input_update();
 
-  /* delay between VINT flag & Vertical Interrupt (Ex-Mutants, Tyrant) */
-  m68k_run(588);
-  
-  /* set VINT flag */
-  status |= 0x80;
-
   /* delay between VBLANK flag & Vertical Interrupt (Dracula, OutRunners, VR Troopers) */
   m68k_run(788);
   if (zstate == 1)
@@ -860,6 +860,9 @@ void system_frame_scd(int do_skip)
   {
     Z80.cycles = 788;
   }
+
+  /* set VINT flag */
+  status |= 0x80;
 
   /* Vertical Interrupt */
   vint_pending = 0x20;
@@ -1060,10 +1063,9 @@ void system_frame_scd(int do_skip)
     bitmap.viewport.changed |= 1;
   }
   
-  /* prepare for next SCD frame */
+  /* adjust timings for next frame */
   scd_end_frame(scd.cycles);
-
-  /* adjust CPU cycle counters for next frame */
+  input_end_frame(mcycles_vdp);
   m68k.cycles -= mcycles_vdp;
   Z80.cycles -= mcycles_vdp;
 }
@@ -1178,7 +1180,10 @@ void system_frame_sms(int do_skip)
         }
       }
     }
-    
+
+    /* active screen width */
+    bitmap.viewport.w = 256 + ((reg[12] & 0x01) << 6);
+
     /* check viewport changes */
     if (bitmap.viewport.h != bitmap.viewport.oh)
     {
@@ -1280,17 +1285,22 @@ void system_frame_sms(int do_skip)
     /* update VCounter */
     v_counter = line;
 
-    /* Master System & Game Gear VDP specific */
-    if ((system_hw < SYSTEM_MD) && (line > (lines_per_frame - 16)))
-    {
-      /* Sprites are still processed during top border */
-      render_obj((line - lines_per_frame) & 1);
-      parse_satb(line - lines_per_frame);
-    }
-
     /* render overscan */
     if ((line < end) || (line >= start))
     {
+      /* Master System & Game Gear VDP specific */
+      if ((system_hw < SYSTEM_MD) && (line > (lines_per_frame - 16)))
+      {
+        /* Sprites are still processed during top border */
+        if (reg[1] & 0x40)
+        {
+          render_obj((line - lines_per_frame) & 1);
+        }
+        
+        /* Sprites pre-processing occurs even when display is disabled */
+        parse_satb(line - lines_per_frame);
+      }
+
       blank_line(line, -bitmap.viewport.x, bitmap.viewport.w + 2*bitmap.viewport.x);
     }
 
@@ -1311,6 +1321,16 @@ void system_frame_sms(int do_skip)
   /* last line of overscan */
   if (bitmap.viewport.y > 0)
   {
+    /* Master System & Game Gear VDP specific */
+    if (system_hw < SYSTEM_MD)
+    {
+      /* Sprites are still processed during top border */
+      if (reg[1] & 0x40)
+      {
+        render_obj(1);
+      }
+    }
+
     blank_line(line, -bitmap.viewport.x, bitmap.viewport.w + 2*bitmap.viewport.x);
   }
 
@@ -1360,13 +1380,7 @@ void system_frame_sms(int do_skip)
 
   /* Master System & Game Gear VDP specific */
   else
-  {
-    /* Sprites are still processed during vertical borders */
-    if (reg[1] & 0x40)
-    {
-      render_obj(1);
-    }
-    
+  {    
     /* Sprites pre-processing occurs even when display is disabled */
     parse_satb(-1);
   }
@@ -1455,6 +1469,7 @@ void system_frame_sms(int do_skip)
     bitmap.viewport.changed |= 1;
   }
 
-  /* adjust Z80 cycle count for next frame */
+  /* adjust timings for next frame */
+  input_end_frame(mcycles_vdp);
   Z80.cycles -= mcycles_vdp;
 }

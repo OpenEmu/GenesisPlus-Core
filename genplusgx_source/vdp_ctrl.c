@@ -5,7 +5,7 @@
  *  Support for SG-1000 (TMS99xx & 315-5066), Master System (315-5124 & 315-5246), Game Gear & Mega Drive VDP
  *
  *  Copyright (C) 1998-2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2015  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2016  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -180,6 +180,26 @@ static void (*const dma_func[16])(unsigned int length) =
   vdp_dma_copy,vdp_dma_copy,vdp_dma_copy,vdp_dma_copy
 };
 
+/* BG rendering functions */
+static void (*const render_bg_modes[16])(int line) =
+{
+  render_bg_m0,   /* Graphics I */
+  render_bg_m2,   /* Graphics II */
+  render_bg_m4,   /* Mode 4 */
+  render_bg_m4,   /* Mode 4 */
+  render_bg_m3,   /* Multicolor */
+  render_bg_m3x,  /* Multicolor (Extended PG) */
+  render_bg_m4,   /* Mode 4 */
+  render_bg_m4,   /* Mode 4 */
+  render_bg_m1,   /* Text */
+  render_bg_m1x,  /* Text (Extended PG) */
+  render_bg_m4,   /* Mode 4 */
+  render_bg_m4,   /* Mode 4 */
+  render_bg_inv,  /* Invalid (1+3) */
+  render_bg_inv,  /* Invalid (1+2+3) */
+  render_bg_m4,   /* Mode 4 */
+  render_bg_m4,   /* Mode 4 */
+};
 
 /*--------------------------------------------------------------------------*/
 /* Init, reset, context functions                                           */
@@ -451,12 +471,14 @@ int vdp_context_load(uint8 *state)
     }
     else
     {
+      /* TMS-99xx registers are updated directly to prevent spurious 4K->16K VRAM switching */
       for (i=0;i<0x08;i++) 
       {
-        pending = 1;
-        addr_latch = temp_reg[i];
-        vdp_tms_ctrl_w(0x80 | i);
+        reg[i] = temp_reg[i];
       }
+
+      /* Rendering mode */
+      render_bg = render_bg_modes[((reg[0] & 0x02) | (reg[1] & 0x18)) >> 1];
     }
   }
   else
@@ -517,7 +539,7 @@ int vdp_context_load(uint8 *state)
     color_update_m4(0x40, *(uint16 *)&cram[(0x10 | (bordrr & 0x0F)) << 1]);
   }
 
-  /* invalidate cache */
+  /* invalidate tile cache */
   for (i=0;i<bg_list_index;i++) 
   {
     bg_name_list[i]=i;
@@ -534,7 +556,7 @@ int vdp_context_load(uint8 *state)
 
 void vdp_dma_update(unsigned int cycles)
 {
-  int dma_cycles, dma_bytes;
+  unsigned int dma_cycles, dma_bytes;
 
   /* DMA transfer rate (bytes per line) 
 
@@ -619,7 +641,7 @@ void vdp_dma_update(unsigned int cycles)
   }
 
   /* Process DMA */
-  if (dma_bytes > 0)
+  if (dma_bytes)
   {
     /* Update DMA length */
     dma_length -= dma_bytes;
@@ -1006,62 +1028,7 @@ void vdp_sms_ctrl_w(unsigned int data)
         }
 
         /* Rendering mode */
-        switch (mode)
-        {
-          case 0x00: /* Graphics I */
-          {
-            render_bg = render_bg_m0;
-            break;
-          }
-
-          case 0x10: /* Text */
-          {
-            render_bg = render_bg_m1;
-           break;
-          }
-
-          case 0x02: /* Graphics II */
-          {
-            render_bg = render_bg_m2;
-            break;
-          }
-
-          case 0x12: /* Text (Extended PG) */
-          {
-            render_bg = render_bg_m1x;
-            break;
-          }
-
-          case 0x08: /* Multicolor */
-          {
-            render_bg = render_bg_m3;
-            break;
-          }
-
-          case 0x18: /* Invalid (1+3) */
-          {
-            render_bg = render_bg_inv;
-            break;
-          }
-
-          case 0x0A: /* Multicolor (Extended PG) */
-          {
-            render_bg = render_bg_m3x;
-            break;
-          }
-
-          case 0x1A: /* Invalid (1+2+3) */
-          {
-            render_bg = render_bg_inv;
-           break;
-          }
-
-          default: /* Mode 4 */
-          {
-            render_bg = render_bg_m4;
-            break;
-          }
-        }
+        render_bg = render_bg_modes[mode>>1];
 
         /* Mode switching */
         if (prev & 0x04)
@@ -1140,59 +1107,8 @@ void vdp_tms_ctrl_w(unsigned int data)
       /* Check VDP mode changes */
       if (data < 2)
       {
-        int mode = (reg[0] & 0x02) | (reg[1] & 0x18);
-
         /* Rendering mode */
-        switch (mode)
-        {
-          case 0x00: /* Graphics I */
-          {
-            render_bg = render_bg_m0;
-            break;
-          }
-
-          case 0x10: /* Text */
-          {
-            render_bg = render_bg_m1;
-            break;
-          }
-
-          case 0x02: /* Graphics II */
-          {
-            render_bg = render_bg_m2;
-            break;
-          }
-
-          case 0x12: /* Text (Extended PG) */
-          {
-            render_bg = render_bg_m1x;
-            break;
-          }
-
-          case 0x08: /* Multicolor */
-          {
-            render_bg = render_bg_m3;
-            break;
-          }
-
-          case 0x18: /* Invalid (1+3) */
-          {
-            render_bg = render_bg_inv;
-            break;
-          }
-
-          case 0x0A: /* Multicolor (Extended PG) */
-          {
-            render_bg = render_bg_m3x;
-            break;
-          }
-
-          case 0x1A: /* Invalid (1+2+3) */
-          {
-            render_bg = render_bg_inv;
-            break;
-          }
-        }
+        render_bg = render_bg_modes[((reg[0] & 0x02) | (reg[1] & 0x18)) >> 1];
       }
     }
   }
@@ -1217,6 +1133,9 @@ void vdp_tms_ctrl_w(unsigned int data)
 unsigned int vdp_68k_ctrl_r(unsigned int cycles)
 {
   unsigned int temp;
+
+  /* Cycle-accurate VDP status read (68k read cycle takes four CPU cycles i.e 28 Mcycles) */
+  cycles += 4 * 7;
 
   /* Update FIFO status flags if not empty */
   if (fifo_write_cnt)
@@ -1244,14 +1163,25 @@ unsigned int vdp_68k_ctrl_r(unsigned int cycles)
   /* Clear SOVR & SCOL flags */
   status &= 0xFF9F;
 
-  /* Display OFF: VBLANK flag is set */
+  /* VBLANK flag is set when display is disabled */
   if (!(reg[1] & 0x40))
   {
     temp |= 0x08;
   }
 
-  /* HBLANK flag (Sonic 3 and Sonic 2 "VS Modes", Lemmings 2, Mega Turrican, V.R Troopers, Gouketsuji Ichizoku,...) */
-  /* NB: this is not 100% accurate and need to be verified on real hardware */
+  /* Cycle-accurate VINT flag (Ex-Mutants, Tyrant / Mega-Lo-Mania) */
+  /* this allows VINT flag to be read just before vertical interrupt is being triggered */
+  if ((v_counter == bitmap.viewport.h) && (cycles >= (mcycles_vdp + 788)))
+  {
+    /* check Z80 interrupt state to assure VINT has not already been triggered (and flag cleared) */
+    if (Z80.irq_state != ASSERT_LINE)
+    {
+      temp |= 0x80;
+    }
+  }
+
+  /* Cycle-accurate HBLANK flag (Sonic 3 & Sonic 2 "VS Modes", Bugs Bunny Double Trouble, Lemmings 2, Mega Turrican, V.R Troopers, Gouketsuji Ichizoku,...) */
+  /* NB: this is not 100% accurate (see hvc.h for horizontal events timings in H32 and H40 mode) but is close enough to make no noticeable difference for games */
   if ((cycles % MCYCLES_PER_LINE) < 588)
   {
     temp |= 0x04;
@@ -2016,8 +1946,8 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
           /* Update clipping */
           window_clip(reg[17], 1);
 
-          /* Update active display width & max sprite pixels per line*/
-          max_sprite_pixels = bitmap.viewport.w = 320;
+          /* Update max sprite pixels per line*/
+          max_sprite_pixels = 320;
         }
         else
         {
@@ -2033,15 +1963,30 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
           /* Update clipping */
           window_clip(reg[17], 0);
 
-          /* Update active display width & max sprite pixels per line*/
-          max_sprite_pixels = bitmap.viewport.w = 256;
+          /* Update max sprite pixels per line*/
+          max_sprite_pixels = 256;
         }
 
-        /* Active display width modified during HBLANK (Bugs Bunny Double Trouble) */
-        if ((v_counter < bitmap.viewport.h) && (reg[1] & 0x40) && (cycles <= (mcycles_vdp + 860)))
+        if (v_counter >= bitmap.viewport.h)
         {
-          /* Redraw entire line */
-          render_line(v_counter);
+          /* Active screen width modified during VBLANK will be applied on upcoming frame */
+          bitmap.viewport.w = max_sprite_pixels;
+        }
+        else if ((v_counter == 0) && (cycles <= (mcycles_vdp + 860)))
+        {
+          /* Active screen width modified during first line HBLANK (Bugs Bunny in Double Trouble) */
+          bitmap.viewport.w = max_sprite_pixels;
+
+          /* Redraw first line */
+          render_line(0);
+        }
+        else
+        {
+          /* Screen width changes during active display (Golden Axe 3 intro, Ultraverse Prime) */
+          /* should be applied on next frame since backend rendered framebuffer width is fixed */
+          /* and can not be modified mid-frame. This is not 100% accurate but games generally  */
+          /* do this where the screen is blanked so it is likely unnoticeable. */
+          bitmap.viewport.changed |= 2;
         }
       }
       break;
