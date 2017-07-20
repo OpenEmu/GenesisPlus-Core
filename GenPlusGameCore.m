@@ -96,7 +96,7 @@ typedef NS_ENUM(NSInteger, MultiTapType)
 
 @interface GenPlusGameCore () <OEGenesisSystemResponderClient, OESegaCDSystemResponderClient>
 {
-    uint32_t *videoBuffer;
+    uint8_t *videoBuffer;
     int16_t *soundBuffer;
     NSMutableDictionary *cheatList;
     NSURL *_romFile;
@@ -116,7 +116,6 @@ static __weak GenPlusGameCore *_current;
 {
     if((self = [super init]))
     {
-        videoBuffer = (uint32_t*)malloc(720 * 576 * 4);
         soundBuffer = (int16_t *)malloc(2048 * 2 * 2);
         cheatList = [[NSMutableDictionary alloc] init];
     }
@@ -264,9 +263,14 @@ static __weak GenPlusGameCore *_current;
 
 # pragma mark - Video
 
-- (const void *)videoBuffer
+- (const void *)getVideoBufferWithHint:(void *)hint
 {
-    return videoBuffer;
+    if (!hint) {
+        if (!videoBuffer) videoBuffer = (uint8_t*)malloc(720 * 576 * 4);
+        hint = videoBuffer;
+    }
+
+    return bitmap.data = (uint8_t*)hint;
 }
 
 - (OEIntRect)screenRect
@@ -287,11 +291,6 @@ static __weak GenPlusGameCore *_current;
 - (GLenum)pixelType
 {
     return GL_UNSIGNED_INT_8_8_8_8_REV;
-}
-
-- (GLenum)internalPixelFormat
-{
-    return GL_RGB8;
 }
 
 # pragma mark - Audio
@@ -642,7 +641,6 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
     bitmap.width      = 720;
     bitmap.height     = 576;
     bitmap.pitch      = bitmap.width * sizeof(uint32_t);
-    bitmap.data       = (uint8_t *)videoBuffer;
 }
 
 - (void)configureInput
