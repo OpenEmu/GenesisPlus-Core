@@ -116,6 +116,7 @@ static __weak GenPlusGameCore *_current;
 {
     if((self = [super init]))
     {
+        videoBuffer = (uint8_t*)malloc(720 * 576 * 4);
         soundBuffer = (int16_t *)malloc(2048 * 2 * 2);
         cheatList = [[NSMutableDictionary alloc] init];
     }
@@ -266,7 +267,6 @@ static __weak GenPlusGameCore *_current;
 - (const void *)getVideoBufferWithHint:(void *)hint
 {
     if (!hint) {
-        if (!videoBuffer) videoBuffer = (uint8_t*)malloc(720 * 576 * 4);
         hint = videoBuffer;
     }
 
@@ -641,6 +641,7 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
     bitmap.width      = 720;
     bitmap.height     = 576;
     bitmap.pitch      = bitmap.width * sizeof(uint32_t);
+    bitmap.data       = (uint8_t *)videoBuffer;
 }
 
 - (void)configureInput
