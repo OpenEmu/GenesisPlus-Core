@@ -139,17 +139,17 @@ static __weak GenPlusGameCore *_current;
     _romFile = [NSURL fileURLWithPath:path];
 
     // Set CD BIOS and BRAM/RAM Cart paths
-    snprintf(CD_BIOS_EU, sizeof(CD_BIOS_EU), "%s%sbios_CD_E.bin", [[self biosDirectoryPath] UTF8String], "/");
-    snprintf(CD_BIOS_US, sizeof(CD_BIOS_US), "%s%sbios_CD_U.bin", [[self biosDirectoryPath] UTF8String], "/");
-    snprintf(CD_BIOS_JP, sizeof(CD_BIOS_JP), "%s%sbios_CD_J.bin", [[self biosDirectoryPath] UTF8String], "/");
-    snprintf(CD_BRAM_EU, sizeof(CD_BRAM_EU), "%s%sscd_E.brm", [[self batterySavesDirectoryPath] UTF8String], "/");
-    snprintf(CD_BRAM_US, sizeof(CD_BRAM_US), "%s%sscd_U.brm", [[self batterySavesDirectoryPath] UTF8String], "/");
-    snprintf(CD_BRAM_JP, sizeof(CD_BRAM_JP), "%s%sscd_J.brm", [[self batterySavesDirectoryPath] UTF8String], "/");
-    snprintf(CART_BRAM,  sizeof(CART_BRAM),  "%s%scart.brm",  [[self batterySavesDirectoryPath] UTF8String], "/");
+    snprintf(CD_BIOS_EU, sizeof(CD_BIOS_EU), "%s%sbios_CD_E.bin", [[self biosDirectoryPath] fileSystemRepresentation], "/");
+    snprintf(CD_BIOS_US, sizeof(CD_BIOS_US), "%s%sbios_CD_U.bin", [[self biosDirectoryPath] fileSystemRepresentation], "/");
+    snprintf(CD_BIOS_JP, sizeof(CD_BIOS_JP), "%s%sbios_CD_J.bin", [[self biosDirectoryPath] fileSystemRepresentation], "/");
+    snprintf(CD_BRAM_EU, sizeof(CD_BRAM_EU), "%s%sscd_E.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
+    snprintf(CD_BRAM_US, sizeof(CD_BRAM_US), "%s%sscd_U.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
+    snprintf(CD_BRAM_JP, sizeof(CD_BRAM_JP), "%s%sscd_J.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
+    snprintf(CART_BRAM,  sizeof(CART_BRAM),  "%s%scart.brm",  [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
 
     [self configureOptions];
 
-    if (!load_rom((char *)[path UTF8String]))
+    if (!load_rom((char *)path.fileSystemRepresentation))
         return NO;
 
     // Force system region to Japan if user locale is Japan and the cart appears to be world/multi-region
