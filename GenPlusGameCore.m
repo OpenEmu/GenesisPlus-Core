@@ -26,6 +26,9 @@
 
 #import "GenPlusGameCore.h"
 #import <OpenEmuBase/OERingBuffer.h>
+#import "OESMSSystemResponderClient.h"
+#import "OEGGSystemResponderClient.h"
+#import "OESG1000SystemResponderClient.h"
 #import "OEGenesisSystemResponderClient.h"
 #import "OESegaCDSystemResponderClient.h"
 #import <OpenGL/gl.h>
@@ -145,23 +148,27 @@ static __weak GenPlusGameCore *_current;
     snprintf(CD_BRAM_EU, sizeof(CD_BRAM_EU), "%s%sscd_E.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
     snprintf(CD_BRAM_US, sizeof(CD_BRAM_US), "%s%sscd_U.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
     snprintf(CD_BRAM_JP, sizeof(CD_BRAM_JP), "%s%sscd_J.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
-    snprintf(CART_BRAM,  sizeof(CART_BRAM),  "%s%scart.brm",  [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
+    snprintf(CART_BRAM, sizeof(CART_BRAM), "%s%scart.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
 
     [self configureOptions];
 
     if (!load_rom((char *)path.fileSystemRepresentation))
         return NO;
 
-    // Force system region to Japan if user locale is Japan and the cart appears to be world/multi-region
-    if((strstr((const char*)rominfo.country, "EJ") ||
-        strstr((const char*)rominfo.country, "JE") ||
-        strstr((const char*)rominfo.country, "JU") ||
-        strstr((const char*)rominfo.country, "UJ") != NULL)
-       && [[self systemRegion] isEqualToString: @"Japan"])
+    if([[self systemIdentifier] isEqualToString:@"openemu.system.sg"] || [[self systemIdentifier] isEqualToString:@"openemu.system.scd"] || [[self systemIdentifier] isEqualToString:@"openemu.system.sms"])
     {
-        config.region_detect = 3;
-        region_code = REGION_JAPAN_NTSC;
-        NSLog(@"GenesisPlusGX: Forcing region to Japan for multi-region cart");
+        // Force system region to Japan if user locale is Japan and the cart appears to be world/multi-region
+        if((strstr((const char*)rominfo.country, "EJ") ||
+            strstr((const char*)rominfo.country, "JE") ||
+            strstr((const char*)rominfo.country, "JU") ||
+            strstr((const char*)rominfo.country, "UJ") ||
+            strstr(rominfo.country, "SMS Export") != NULL)
+           && [[self systemRegion] isEqualToString: @"Japan"])
+        {
+            config.region_detect = 3;
+            region_code = REGION_JAPAN_NTSC;
+            NSLog(@"Genesis Plus GX: Forcing region to Japan for multi-region cart");
+        }
     }
 
     [self configureInput];
@@ -187,9 +194,12 @@ static __weak GenPlusGameCore *_current;
         NSLog(@"GenesisPlusGX: Loaded sram");
     }
 
-    // Set initial viewport size because the system briefly outputs 256x192 when it boots
-    bitmap.viewport.w = 320;
-    bitmap.viewport.h = 224;
+    if([[self systemIdentifier] isEqualToString:@"openemu.system.sg"] || [[self systemIdentifier] isEqualToString:@"openemu.system.scd"])
+    {
+        // Set initial viewport size because the system briefly outputs 256x192 when it boots
+        bitmap.viewport.w = 320;
+        bitmap.viewport.h = 224;
+    }
 
     return YES;
 }
@@ -275,12 +285,35 @@ static __weak GenPlusGameCore *_current;
 
 - (OEIntRect)screenRect
 {
-    return OEIntRectMake(bitmap.viewport.x, bitmap.viewport.y, bitmap.viewport.w, bitmap.viewport.h);
+    if([[self systemIdentifier] isEqualToString:@"openemu.system.gg"])
+    {
+        return OEIntRectMake(0, 0, 160, 144);
+    }
+    else
+    {
+        return OEIntRectMake(bitmap.viewport.x, bitmap.viewport.y, bitmap.viewport.w, bitmap.viewport.h);
+    }
 }
 
 - (OEIntSize)bufferSize
 {
     return OEIntSizeMake(bitmap.width, bitmap.height);
+}
+
+- (OEIntSize)aspectSize
+{
+    if([[self systemIdentifier] isEqualToString:@"openemu.system.gg"])
+    {
+        return OEIntSizeMake(160, 144);
+    }
+    else if([[self systemIdentifier] isEqualToString:@"openemu.system.sms"] || [[self systemIdentifier] isEqualToString:@"openemu.system.sg100"])
+    {
+        return OEIntSizeMake(256 * (8.0/7.0), 192);
+    }
+    else
+    {
+        return OEIntSizeMake(4, 3); // TODO: Correct PAR.
+    }
 }
 
 - (GLenum)pixelFormat
@@ -414,8 +447,10 @@ static __weak GenPlusGameCore *_current;
 # pragma mark - Input
 
 const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A, INPUT_B, INPUT_C, INPUT_X, INPUT_Y, INPUT_Z, INPUT_START, INPUT_MODE};
+const int GameGearMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_B, INPUT_C, INPUT_START};
+const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_BUTTON1, INPUT_BUTTON2, INPUT_START};
 
-- (oneway void)didPushGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player;
+- (oneway void)didPushGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player
 {
     if (_multiTapType == GamepadPort1TeamPlayerPort2 || cart.special & HW_J_CART)
     {
@@ -432,7 +467,7 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
     }
 }
 
-- (oneway void)didReleaseGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player;
+- (oneway void)didReleaseGenesisButton:(OEGenesisButton)button forPlayer:(NSUInteger)player
 {
     if (_multiTapType == GamepadPort1TeamPlayerPort2 || cart.special & HW_J_CART)
     {
@@ -447,7 +482,7 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
         input.pad[(player-1) * 4] &= ~GenesisMap[button];
 }
 
-- (oneway void)didPushSegaCDButton:(OESegaCDButton)button forPlayer:(NSUInteger)player;
+- (oneway void)didPushSegaCDButton:(OESegaCDButton)button forPlayer:(NSUInteger)player
 {
     if (_multiTapType == GamepadPort1TeamPlayerPort2)
     {
@@ -462,7 +497,7 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
         input.pad[(player-1) * 4] |= GenesisMap[button];
 }
 
-- (oneway void)didReleaseSegaCDButton:(OESegaCDButton)button forPlayer:(NSUInteger)player;
+- (oneway void)didReleaseSegaCDButton:(OESegaCDButton)button forPlayer:(NSUInteger)player
 {
     if (_multiTapType == GamepadPort1TeamPlayerPort2)
     {
@@ -475,6 +510,56 @@ const int GenesisMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_A
     }
     else
         input.pad[(player-1) * 4] &= ~GenesisMap[button];
+}
+
+- (oneway void)didPushGGButton:(OEGGButton)button
+{
+     input.pad[0] |= GameGearMap[button];
+}
+
+- (oneway void)didReleaseGGButton:(OEGGButton)button
+{
+    input.pad[0] &= ~GameGearMap[button];
+}
+
+- (oneway void)didPushSMSButton:(OESMSButton)button forPlayer:(NSUInteger)player
+{
+    input.pad[(player-1) * 4] |= MasterSystemMap[button];
+}
+
+- (oneway void)didReleaseSMSButton:(OESMSButton)button forPlayer:(NSUInteger)player
+{
+    input.pad[(player-1) * 4] &= ~MasterSystemMap[button];
+}
+
+- (oneway void)didPushSMSStartButton
+{
+    [self didPushSMSButton:OESMSButtonStart forPlayer:1];
+}
+
+- (oneway void)didReleaseSMSStartButton
+{
+    [self didReleaseSMSButton:OESMSButtonStart forPlayer:1];
+}
+
+- (oneway void)didPushSMSResetButton
+{
+
+}
+
+- (oneway void)didReleaseSMSResetButton
+{
+
+}
+
+- (oneway void)didPushSG1000Button:(OESG1000Button)button forPlayer:(NSUInteger)player
+{
+    input.pad[(player-1) * 4] |= MasterSystemMap[button];
+}
+
+- (oneway void)didReleaseSG1000Button:(OESG1000Button)button forPlayer:(NSUInteger)player
+{
+    input.pad[(player-1) * 4] &= ~MasterSystemMap[button];
 }
 
 - (oneway void)mouseMovedAtPoint:(OEIntPoint)aPoint
@@ -1453,7 +1538,10 @@ void RAMCheatUpdate(void)
 
         /* apply RAM patch */
         //if (cheatlist[index].data & 0xFF00)
-        if (cheatlist[index].data & 0x00FF) // For LSB?
+        //if (cheatlist[index].data & 0x00FF) // For LSB?
+        BOOL isSega8bit = [[_current systemIdentifier] isEqualToString:@"openemu.system.gg"] || [[_current systemIdentifier] isEqualToString:@"openemu.system.sms"] || [[_current systemIdentifier] isEqualToString:@"openemu.system.sg1000"];
+        // TODO: Figure out why this is. Some PAR cheats for Genesis don't work otherwise.
+        if (isSega8bit ? cheatlist[index].data & 0xFF00 : cheatlist[index].data & 0x00FF)
         {
             /* word patch */
             *(uint16_t *)(work_ram + (cheatlist[index].address & 0xFFFE)) = cheatlist[index].data;
@@ -1463,6 +1551,50 @@ void RAMCheatUpdate(void)
             /* byte patch */
             work_ram[cheatlist[index].address & 0xFFFF] = cheatlist[index].data;
         }
+    }
+}
+
+/****************************************************************************
+ * ROMCheatUpdate
+ *
+ * Apply ROM patches (this should be called each time banking is changed)
+ *
+ ****************************************************************************/
+void ROMCheatUpdate(void)
+{
+    int index, cnt = maxROMcheats;
+    uint8_t *ptr;
+
+    while (cnt)
+    {
+        /* get cheat index */
+        index = cheatIndexes[MAX_CHEATS - cnt];
+
+        /* check if previous banked ROM address was patched */
+        if (cheatlist[index].prev != NULL)
+        {
+            /* restore original data */
+            *cheatlist[index].prev = cheatlist[index].old;
+
+            /* no more patched ROM address */
+            cheatlist[index].prev = NULL;
+        }
+
+        /* get current banked ROM address */
+        ptr = &z80_readmap[(cheatlist[index].address) >> 10][cheatlist[index].address & 0x03FF];
+
+        /* check if reference matches original ROM data */
+        if (((uint8_t)cheatlist[index].old) == *ptr)
+        {
+            /* patch data */
+            *ptr = cheatlist[index].data;
+
+            /* save patched ROM address */
+            cheatlist[index].prev = ptr;
+        }
+
+        /* next ROM patch */
+        cnt--;
     }
 }
 

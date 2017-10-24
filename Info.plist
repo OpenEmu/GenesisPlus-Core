@@ -26,6 +26,17 @@
 	<string>GenPlusGameCore</string>
 	<key>OEGameCoreOptions</key>
 	<dict>
+		<key>openemu.system.gg</key>
+		<dict>
+			<key>OEGameCoreRewindBufferSeconds</key>
+			<integer>60</integer>
+			<key>OEGameCoreRewindInterval</key>
+			<integer>0</integer>
+			<key>OEGameCoreSupportsCheatCode</key>
+			<true/>
+			<key>OEGameCoreSupportsRewinding</key>
+			<true/>
+		</dict>
 		<key>openemu.system.scd</key>
 		<dict>
 			<key>OEGameCoreRequiresFiles</key>
@@ -83,6 +94,28 @@
 			<key>OEGameCoreSupportsRewinding</key>
 			<true/>
 		</dict>
+		<key>openemu.system.sg1000</key>
+		<dict>
+			<key>OEGameCoreRewindBufferSeconds</key>
+			<integer>60</integer>
+			<key>OEGameCoreRewindInterval</key>
+			<integer>0</integer>
+			<key>OEGameCoreSupportsCheatCode</key>
+			<true/>
+			<key>OEGameCoreSupportsRewinding</key>
+			<true/>
+		</dict>
+		<key>openemu.system.sms</key>
+		<dict>
+			<key>OEGameCoreRewindBufferSeconds</key>
+			<integer>60</integer>
+			<key>OEGameCoreRewindInterval</key>
+			<integer>0</integer>
+			<key>OEGameCoreSupportsCheatCode</key>
+			<true/>
+			<key>OEGameCoreSupportsRewinding</key>
+			<true/>
+		</dict>
 	</dict>
 	<key>OEGameCorePlayerCount</key>
 	<string>8</string>
@@ -90,6 +123,9 @@
 	<string>http://code.google.com/p/genplus-gx</string>
 	<key>OESystemIdentifiers</key>
 	<array>
+		<string>openemu.system.sg1000</string>
+		<string>openemu.system.gg</string>
+		<string>openemu.system.sms</string>
 		<string>openemu.system.sg</string>
 		<string>openemu.system.scd</string>
 	</array>
