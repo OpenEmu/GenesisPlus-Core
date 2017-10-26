@@ -580,6 +580,11 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
             input.analog[4][1] = aPoint.y;
         }
     }
+    else if (input.system[0] == SYSTEM_LIGHTPHASER)
+    {
+        input.analog[0][0] = aPoint.x * 0.876712;
+        input.analog[0][1] = aPoint.y;
+    }
 }
 
 - (oneway void)leftMouseDownAtPoint:(OEIntPoint)aPoint
@@ -589,6 +594,11 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
         [self mouseMovedAtPoint:aPoint];
         input.pad[4] |= INPUT_A; // menacer button A / justifier trigger
     }
+    else if (input.system[0] == SYSTEM_LIGHTPHASER)
+    {
+        [self mouseMovedAtPoint:aPoint];
+        input.pad[0] |= INPUT_A; // light phaser trigger
+    }
 }
 
 - (oneway void)leftMouseUp
@@ -596,6 +606,10 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     if (input.dev[4] == DEVICE_LIGHTGUN)
     {
         input.pad[4] &= ~INPUT_A; // menacer button A / justifier trigger
+    }
+    else if (input.system[0] == SYSTEM_LIGHTPHASER)
+    {
+        input.pad[0] &= ~INPUT_A; // light phaser trigger
     }
 }
 
