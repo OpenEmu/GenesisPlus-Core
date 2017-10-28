@@ -265,6 +265,12 @@ void s68k_run(unsigned int cycles)
   }
 }
 
+
+int s68k_cycles(void)
+{
+  return CYC_INSTRUCTION[REG_IR];
+}
+
 void s68k_init(void)
 {
 #ifdef BUILD_TABLES
@@ -276,6 +282,10 @@ void s68k_init(void)
     m68ki_build_opcode_table();
     emulation_initialized = 1;
   }
+#endif
+
+#ifdef M68K_OVERCLOCK_SHIFT
+  s68k.cycle_ratio = 1 << M68K_OVERCLOCK_SHIFT;
 #endif
 
 #if M68K_EMULATE_INT_ACK == OPT_ON

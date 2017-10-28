@@ -5,7 +5,7 @@
  *  Support for SG-1000 (TMS99xx & 315-5066), Master System (315-5124 & 315-5246), Game Gear & Mega Drive VDP
  *
  *  Copyright (C) 1998-2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2016  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2017  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -54,15 +54,15 @@
 }
 
 /* VDP context */
-uint8 sat[0x400];     /* Internal copy of sprite attribute table */
-uint8 vram[0x10000];  /* Video RAM (64K x 8-bit) */
-uint8 cram[0x80];     /* On-chip color RAM (64 x 9-bit) */
-uint8 vsram[0x80];    /* On-chip vertical scroll RAM (40 x 11-bit) */
-uint8 reg[0x20];      /* Internal VDP registers (23 x 8-bit) */
-uint8 hint_pending;   /* 0= Line interrupt is pending */
-uint8 vint_pending;   /* 1= Frame interrupt is pending */
-uint16 status;        /* VDP status flags */
-uint32 dma_length;    /* DMA remaining length */
+uint8 ALIGNED_(4) sat[0x400];    /* Internal copy of sprite attribute table */
+uint8 ALIGNED_(4) vram[0x10000]; /* Video RAM (64K x 8-bit) */
+uint8 ALIGNED_(4) cram[0x80];    /* On-chip color RAM (64 x 9-bit) */
+uint8 ALIGNED_(4) vsram[0x80];   /* On-chip vertical scroll RAM (40 x 11-bit) */
+uint8 reg[0x20];                 /* Internal VDP registers (23 x 8-bit) */
+uint8 hint_pending;              /* 0= Line interrupt is pending */
+uint8 vint_pending;              /* 1= Frame interrupt is pending */
+uint16 status;                   /* VDP status flags */
+uint32 dma_length;               /* DMA remaining length */
 
 /* Global variables */
 uint16 ntab;                      /* Name table A base address */
@@ -141,6 +141,7 @@ static uint16 fifo[4];        /* FIFO ring-buffer */
 static int fifo_idx;          /* FIFO write index */
 static int fifo_byte_access;  /* FIFO byte access flag */
 static uint32 fifo_cycles;    /* FIFO next access cycle */
+static int *fifo_timing;      /* FIFO slots timing table */
 
  /* set Z80 or 68k interrupt lines */
 static void (*set_irq_line)(unsigned int level);
@@ -156,12 +157,25 @@ static const uint16 vc_table[4][2] =
   {0x106, 0x10A}  /* Mode 5 (240 lines) */
 };
 
+/* FIFO access slots timings */
+static const int fifo_timing_h32[16+4] = 
+{
+  230, 510, 810, 970, 1130, 1450, 1610, 1770, 2090, 2250, 2410, 2730, 2890, 3050, 3350, 3370,
+  MCYCLES_PER_LINE + 230, MCYCLES_PER_LINE + 510, MCYCLES_PER_LINE + 810, MCYCLES_PER_LINE + 970, 
+};
+
+static const int fifo_timing_h40[18+4] = 
+{
+  352, 820, 948, 1076, 1332, 1460, 1588, 1844, 1972, 2100, 2356, 2484, 2612, 2868, 2996, 3124, 3364, 3380,
+  MCYCLES_PER_LINE + 352, MCYCLES_PER_LINE + 820, MCYCLES_PER_LINE + 948, MCYCLES_PER_LINE + 1076, 
+};
+
 /* DMA Timings (number of access slots per line) */
 static const uint8 dma_timing[2][2] =
 {
 /* H32, H40 */
   {16 , 18},  /* active display */
-  {167, 205}  /* blank display */
+  {166, 204}  /* blank display */
 };
 
 /* DMA processing functions (set by VDP register 23 high nibble) */
@@ -305,6 +319,9 @@ void vdp_reset(void)
 
   /* default sprite pixel width */
   max_sprite_pixels = 256;
+
+  /* default FIFO access slots timings */
+  fifo_timing = (int *)fifo_timing_h32;
 
   /* default overscan area */
   if ((system_hw == SYSTEM_GG) && !config.gg_extra)
@@ -560,19 +577,16 @@ void vdp_dma_update(unsigned int cycles)
 
   /* DMA transfer rate (bytes per line) 
 
-     According to the manual, here's a table that describes the transfer
-   rates of each of the three DMA types:
-
       DMA Mode      Width       Display      Transfer Count
       -----------------------------------------------------
       68K > VDP     32-cell     Active       16
-                                Blanking     167
-                    40-cell     Active       18
-                                Blanking     205
-      VRAM Fill     32-cell     Active       15
                                 Blanking     166
-                    40-cell     Active       17
+                    40-cell     Active       18
                                 Blanking     204
+      VRAM Fill     32-cell     Active       15
+                                Blanking     165
+                    40-cell     Active       17
+                                Blanking     203
       VRAM Copy     32-cell     Active       8
                                 Blanking     83
                     40-cell     Active       9
@@ -897,7 +911,10 @@ void vdp_z80_ctrl_w(unsigned int data)
           {
             case 2:
             {
-              /* DMA Fill will be triggered by next write to DATA port */
+              /* DMA Fill */
+              dma_type = 2;
+
+              /* DMA is pending until next DATA port write */
               dmafill = 1;
 
               /* Set DMA Busy flag */
@@ -1134,8 +1151,8 @@ unsigned int vdp_68k_ctrl_r(unsigned int cycles)
 {
   unsigned int temp;
 
-  /* Cycle-accurate VDP status read (68k read cycle takes four CPU cycles i.e 28 Mcycles) */
-  cycles += 4 * 7;
+  /* Cycle-accurate VDP status read (adjust CPU time with current instruction execution time) */
+  cycles += m68k_cycles();
 
   /* Update FIFO status flags if not empty */
   if (fifo_write_cnt)
@@ -1169,7 +1186,7 @@ unsigned int vdp_68k_ctrl_r(unsigned int cycles)
     temp |= 0x08;
   }
 
-  /* Cycle-accurate VINT flag (Ex-Mutants, Tyrant / Mega-Lo-Mania) */
+  /* Cycle-accurate VINT flag (Ex-Mutants, Tyrant / Mega-Lo-Mania, Marvel Land) */
   /* this allows VINT flag to be read just before vertical interrupt is being triggered */
   if ((v_counter == bitmap.viewport.h) && (cycles >= (mcycles_vdp + 788)))
   {
@@ -1932,6 +1949,13 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
       /* Active display width */
       if (r & 0x01)
       {
+        /* FIFO access slots timings depend on active width */
+        if (fifo_slots)
+        {
+          /* Synchronize VDP FIFO */
+          vdp_fifo_update(cycles);
+        }
+
         if (d & 0x01)
         {
           /* Update display-dependant registers */
@@ -1948,6 +1972,9 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
 
           /* Update max sprite pixels per line*/
           max_sprite_pixels = 320;
+
+          /* FIFO access slots timings */
+          fifo_timing = (int *)fifo_timing_h40;
         }
         else
         {
@@ -1965,27 +1992,35 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
 
           /* Update max sprite pixels per line*/
           max_sprite_pixels = 256;
+
+          /* FIFO access slots timings */
+          fifo_timing = (int *)fifo_timing_h32;
         }
 
+        /* Active screen width modified during VBLANK will be applied on upcoming frame */
         if (v_counter >= bitmap.viewport.h)
         {
-          /* Active screen width modified during VBLANK will be applied on upcoming frame */
           bitmap.viewport.w = max_sprite_pixels;
         }
-        else if ((v_counter == 0) && (cycles <= (mcycles_vdp + 860)))
+
+        /* Allow active screen width to be modified during first two lines (Bugs Bunny in Double Trouble) */
+        else if (v_counter <= 1)
         {
-          /* Active screen width modified during first line HBLANK (Bugs Bunny in Double Trouble) */
           bitmap.viewport.w = max_sprite_pixels;
 
-          /* Redraw first line */
+          /* Redraw lines */
           render_line(0);
+          if (v_counter)
+          {
+            render_line(1);
+          }
         }
         else
         {
           /* Screen width changes during active display (Golden Axe 3 intro, Ultraverse Prime) */
           /* should be applied on next frame since backend rendered framebuffer width is fixed */
           /* and can not be modified mid-frame. This is not 100% accurate but games generally  */
-          /* do this where the screen is blanked so it is likely unnoticeable. */
+          /* do this when the screen is blanked so it is likely unnoticeable. */
           bitmap.viewport.changed |= 2;
         }
       }
@@ -2039,49 +2074,25 @@ static void vdp_reg_w(unsigned int r, unsigned int d, unsigned int cycles)
 
 static void vdp_fifo_update(unsigned int cycles)
 {
-  int slots, count = 0;
-  
-  const int *fifo_timing;
-
-  const int fifo_cycles_h32[16+4] = 
-  {
-    230, 510, 810, 970, 1130, 1450, 1610, 1770, 2090, 2250, 2410, 2730, 2890, 3050, 3350, 3370,
-    MCYCLES_PER_LINE + 230, MCYCLES_PER_LINE + 510, MCYCLES_PER_LINE + 810, MCYCLES_PER_LINE + 970, 
-  };
-
-  const int fifo_cycles_h40[18+4] = 
-  {
-    352, 820, 948, 1076, 1332, 1460, 1588, 1844, 1972, 2100, 2356, 2484, 2612, 2868, 2996, 3124, 3364, 3380,
-    MCYCLES_PER_LINE + 352, MCYCLES_PER_LINE + 820, MCYCLES_PER_LINE + 948, MCYCLES_PER_LINE + 1076, 
-  };
-
+  int fifo_read_cnt, line_slots = 0;
 
   /* number of access slots up to current line */
-  if (reg[12] & 0x01)
-  {
-    fifo_timing = fifo_cycles_h40;
-    slots = 18 * ((v_counter + 1) % lines_per_frame);
-  }
-  else
-  {
-    fifo_timing = fifo_cycles_h32;
-    slots = 16 * ((v_counter + 1) % lines_per_frame);
-  }
+  int total_slots = dma_timing[0][reg[12] & 1] * ((v_counter + 1) % lines_per_frame);
 
   /* number of access slots within current line */
   cycles -= mcycles_vdp;
-  while (fifo_timing[count] <= cycles)
+  while (fifo_timing[line_slots] <= cycles)
   {
-    count++;
+    line_slots++;
   }
 
-  /* number of processed FIFO entries since last access */
-  slots = (slots + count - fifo_slots) >> fifo_byte_access;
+  /* number of processed FIFO entries since last access (byte access needs two slots to process one FIFO word) */
+  fifo_read_cnt = (total_slots + line_slots - fifo_slots) >> fifo_byte_access;
 
-  if (slots > 0)
+  if (fifo_read_cnt > 0)
   {
     /* process FIFO entries */
-    fifo_write_cnt -= slots;
+    fifo_write_cnt -= fifo_read_cnt;
 
     /* Clear FIFO full flag */
     status &= 0xFEFF;
@@ -2093,14 +2104,19 @@ static void vdp_fifo_update(unsigned int cycles)
 
       /* Set FIFO empty flag */
       status |= 0x200;
-    }
 
-    /* Update FIFO access slot counter */
-    fifo_slots += (slots << fifo_byte_access);
+      /* Reinitialize FIFO access slot counter */
+      fifo_slots = total_slots + line_slots;
+    }
+    else
+    {
+      /* Update FIFO access slot counter */
+      fifo_slots += (fifo_read_cnt << fifo_byte_access);
+    }
   }
 
   /* next FIFO update cycle */
-  fifo_cycles = mcycles_vdp + fifo_timing[count | fifo_byte_access];
+  fifo_cycles = mcycles_vdp + fifo_timing[fifo_slots - total_slots + fifo_byte_access];
 }
 
 

@@ -5,7 +5,7 @@
  *  Support for 16-bit & 8-bit hardware modes
  *
  *  Copyright (C) 1998-2003  Charles Mac Donald (original code)
- *  Copyright (C) 2007-2016  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2017  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -52,7 +52,7 @@ uint32 system_clock;
 int16 SVP_cycles = 800; 
 
 static uint8 pause_b;
-static EQSTATE eq;
+static EQSTATE eq[2];
 static int16 llp,rrp;
 
 /******************************************************************************************/
@@ -68,11 +68,9 @@ int audio_init(int samplerate, double framerate)
   memset(&snd, 0, sizeof (snd));
 
   /* Initialize Blip Buffers */
-  snd.blips[0][0] = blip_new(samplerate / 10);
-  snd.blips[0][1] = blip_new(samplerate / 10);
-  if (!snd.blips[0][0] || !snd.blips[0][1])
+  snd.blips[0] = blip_new(samplerate / 10);
+  if (!snd.blips[0])
   {
-    audio_shutdown();
     return -1;
   }
 
@@ -80,11 +78,9 @@ int audio_init(int samplerate, double framerate)
   if (system_hw == SYSTEM_MCD)
   {
     /* allocate blip buffers */
-    snd.blips[1][0] = blip_new(samplerate / 10);
-    snd.blips[1][1] = blip_new(samplerate / 10);
-    snd.blips[2][0] = blip_new(samplerate / 10);
-    snd.blips[2][1] = blip_new(samplerate / 10);
-    if (!snd.blips[1][0] || !snd.blips[1][1] || !snd.blips[2][0] || !snd.blips[2][1])
+    snd.blips[1] = blip_new(samplerate / 10);
+    snd.blips[2] = blip_new(samplerate / 10);
+    if (!snd.blips[1] || !snd.blips[2])
     {
       audio_shutdown();
       return -1;
@@ -132,8 +128,7 @@ void audio_set_rate(int samplerate, double framerate)
   /* master clock timebase so they remain perfectly synchronized together, while still */
   /* being synchronized with 68K and Z80 CPUs as well. Mixed sound chip output is then */
   /* resampled to desired rate at the end of each frame, using Blip Buffer.            */
-  blip_set_rates(snd.blips[0][0], mclk, samplerate);
-  blip_set_rates(snd.blips[0][1], mclk, samplerate);
+  blip_set_rates(snd.blips[0], mclk, samplerate);
 
   /* Mega CD sound hardware */
   if (system_hw == SYSTEM_MCD)
@@ -155,17 +150,14 @@ void audio_set_rate(int samplerate, double framerate)
 
 void audio_reset(void)
 {
-  int i,j;
+  int i;
   
   /* Clear blip buffers */
   for (i=0; i<3; i++)
   {
-    for (j=0; j<2; j++)
+    if (snd.blips[i])
     {
-      if (snd.blips[i][j])
-      {
-        blip_clear(snd.blips[i][j]);
-      }
+      blip_clear(snd.blips[i]);
     }
   }
 
@@ -179,24 +171,22 @@ void audio_reset(void)
 
 void audio_set_equalizer(void)
 {
-  init_3band_state(&eq,config.low_freq,config.high_freq,snd.sample_rate);
-  eq.lg = (double)(config.lg) / 100.0;
-  eq.mg = (double)(config.mg) / 100.0;
-  eq.hg = (double)(config.hg) / 100.0;
+  init_3band_state(&eq[0],config.low_freq,config.high_freq,snd.sample_rate);
+  init_3band_state(&eq[1],config.low_freq,config.high_freq,snd.sample_rate);
+  eq[0].lg = eq[1].lg = (double)(config.lg) / 100.0;
+  eq[0].mg = eq[1].mg = (double)(config.mg) / 100.0;
+  eq[0].hg = eq[1].hg = (double)(config.hg) / 100.0;
 }
 
 void audio_shutdown(void)
 {
-  int i,j;
+  int i;
   
   /* Delete blip buffers */
   for (i=0; i<3; i++)
   {
-    for (j=0; j<2; j++)
-    {
-      blip_delete(snd.blips[i][j]);
-      snd.blips[i][j] = 0;
-    }
+    blip_delete(snd.blips[i]);
+    snd.blips[i] = 0;
   }
 }
 
@@ -213,37 +203,24 @@ int audio_update(int16 *buffer)
 
     /* read CDDA samples */
     cdd_read_audio(size);
-  }
 
 #ifdef ALIGN_SND
-  /* return an aligned number of samples if required */
-  size &= ALIGN_SND;
+    /* return an aligned number of samples if required */
+    size &= ALIGN_SND;
 #endif
 
-  /* resample FM & PSG mixed stream to output buffer */
-#ifdef LSB_FIRST
-  blip_read_samples(snd.blips[0][0], buffer, size);
-  blip_read_samples(snd.blips[0][1], buffer + 1, size);
-#else
-  blip_read_samples(snd.blips[0][0], buffer + 1, size);
-  blip_read_samples(snd.blips[0][1], buffer, size);
-#endif
-
-  /* Mega CD specific */
-  if (system_hw == SYSTEM_MCD)
+    /* resample & mix FM/PSG, PCM & CD-DA streams to output buffer */
+    blip_mix_samples(snd.blips[0], snd.blips[1], snd.blips[2], buffer, size);
+  }
+  else
   {
-    /* resample PCM & CD-DA streams to output buffer */
-#ifdef LSB_FIRST
-    blip_mix_samples(snd.blips[1][0], buffer, size);
-    blip_mix_samples(snd.blips[1][1], buffer + 1, size);
-    blip_mix_samples(snd.blips[2][0], buffer, size);
-    blip_mix_samples(snd.blips[2][1], buffer + 1, size);
-#else
-    blip_mix_samples(snd.blips[1][0], buffer + 1, size);
-    blip_mix_samples(snd.blips[1][1], buffer, size);
-    blip_mix_samples(snd.blips[2][0], buffer + 1, size);
-    blip_mix_samples(snd.blips[2][1], buffer, size);
+#ifdef ALIGN_SND
+    /* return an aligned number of samples if required */
+    size &= ALIGN_SND;
 #endif
+
+    /* resample FM/PSG mixed stream to output buffer */
+    blip_read_samples(snd.blips[0], buffer, size);
   }
 
   /* Audio filtering */
@@ -288,8 +265,8 @@ int audio_update(int16 *buffer)
       do
       {
         /* 3 Band EQ */
-        l = do_3band(&eq,out[0]);
-        r = do_3band(&eq,out[1]);
+        l = do_3band(&eq[0],out[0]);
+        r = do_3band(&eq[1],out[1]);
 
         /* clipping (16-bit samples) */
         if (l > 32767) l = 32767;
