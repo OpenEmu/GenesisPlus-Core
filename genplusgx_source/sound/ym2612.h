@@ -16,12 +16,18 @@
 #ifndef _H_YM2612_
 #define _H_YM2612_
 
+enum {
+  YM2612_DISCRETE = 0,
+  YM2612_INTEGRATED,
+  YM2612_ENHANCED
+};
+
 extern void YM2612Init(void);
-extern void YM2612Config(unsigned char dac_bits);
+extern void YM2612Config(int type);
 extern void YM2612ResetChip(void);
 extern void YM2612Update(int *buffer, int length);
 extern void YM2612Write(unsigned int a, unsigned int v);
-extern unsigned int YM2612Read(unsigned int a);
+extern unsigned int YM2612Read(void);
 extern int YM2612LoadContext(unsigned char *state);
 extern int YM2612SaveContext(unsigned char *state);
 

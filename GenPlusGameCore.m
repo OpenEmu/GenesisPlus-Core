@@ -708,15 +708,18 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     config.hq_fm          = 1; /* high-quality FM resampling (slower) */
     config.hq_psg         = 1; /* high-quality PSG resampling (slower) */
     config.filter         = 0; /* no filter */
-    config.lp_range       = 0x9999; /* 0.6 in 16.16 fixed point */
+    config.lp_range       = 0x7fff; /* 0.5 in 0.16 fixed point */
     config.low_freq       = 880;
     config.high_freq      = 5000;
     config.lg             = 100;
     config.mg             = 100;
     config.hg             = 100;
-    config.dac_bits       = 14; /* MAX DEPTH */
+    config.ym2612         = YM2612_DISCRETE;
     config.ym2413         = 2; /* AUTO */
     config.mono           = 0; /* STEREO output */
+#ifdef HAVE_YM3438_CORE
+    config.ym3438         = 0;
+#endif
 
     /* system options */
     config.system         = 0; /* AUTO */
