@@ -197,7 +197,7 @@ static __weak GenPlusGameCore *_current;
     if([[self systemIdentifier] isEqualToString:@"openemu.system.sg"] || [[self systemIdentifier] isEqualToString:@"openemu.system.scd"])
     {
         // Set initial viewport size because the system briefly outputs 256x192 when it boots
-        bitmap.viewport.w = 320;
+        bitmap.viewport.w = 292;
         bitmap.viewport.h = 224;
     }
 
@@ -312,7 +312,9 @@ static __weak GenPlusGameCore *_current;
     }
     else
     {
-        return OEIntSizeMake(4, 3); // TODO: Correct PAR.
+        // H32 mode (256px * 8:7 PAR)
+        // H40 mode (320px * 32:35 PAR)
+        return OEIntSizeMake(292, 224);
     }
 }
 
@@ -572,11 +574,11 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
         if (bitmap.viewport.w == 320)
         {
             input.analog[4][0] = aPoint.x;
-            input.analog[4][1] = aPoint.y * 0.933333;
+            input.analog[4][1] = aPoint.y * 0.912500;
         }
         else // w == 256
         {
-            input.analog[4][0] = aPoint.x * 0.857143;
+            input.analog[4][0] = aPoint.x * 0.876712;
             input.analog[4][1] = aPoint.y;
         }
     }
