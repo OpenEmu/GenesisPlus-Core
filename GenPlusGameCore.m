@@ -121,7 +121,7 @@ static __weak GenPlusGameCore *_current;
     {
         videoBuffer = (uint8_t*)malloc(720 * 576 * 4);
         soundBuffer = (int16_t *)malloc(2048 * 2 * 2);
-        cheatList = [[NSMutableDictionary alloc] init];
+        cheatList = [NSMutableDictionary dictionary];
     }
 
 	_current = self;
@@ -155,7 +155,7 @@ static __weak GenPlusGameCore *_current;
     if (!load_rom((char *)path.fileSystemRepresentation))
         return NO;
 
-    if([[self systemIdentifier] isEqualToString:@"openemu.system.sg"] || [[self systemIdentifier] isEqualToString:@"openemu.system.scd"] || [[self systemIdentifier] isEqualToString:@"openemu.system.sms"])
+    if([self.systemIdentifier isEqualToString:@"openemu.system.sg"] || [self.systemIdentifier isEqualToString:@"openemu.system.scd"] || [self.systemIdentifier isEqualToString:@"openemu.system.sms"])
     {
         // Force system region to Japan if user locale is Japan and the cart appears to be world/multi-region
         if((strstr((const char*)rominfo.country, "EJ") ||
@@ -163,7 +163,7 @@ static __weak GenPlusGameCore *_current;
             strstr((const char*)rominfo.country, "JU") ||
             strstr((const char*)rominfo.country, "UJ") ||
             strstr(rominfo.country, "SMS Export") != NULL)
-           && [[self systemRegion] isEqualToString: @"Japan"])
+           && [self.systemRegion isEqualToString: @"Japan"])
         {
             config.region_detect = 3;
             region_code = REGION_JAPAN_NTSC;
@@ -194,7 +194,7 @@ static __weak GenPlusGameCore *_current;
         NSLog(@"GenesisPlusGX: Loaded sram");
     }
 
-    if([[self systemIdentifier] isEqualToString:@"openemu.system.sg"] || [[self systemIdentifier] isEqualToString:@"openemu.system.scd"])
+    if([self.systemIdentifier isEqualToString:@"openemu.system.sg"] || [self.systemIdentifier isEqualToString:@"openemu.system.scd"])
     {
         // Set initial viewport size because the system briefly outputs 256x192 when it boots
         bitmap.viewport.w = 292;
@@ -285,7 +285,7 @@ static __weak GenPlusGameCore *_current;
 
 - (OEIntRect)screenRect
 {
-    if([[self systemIdentifier] isEqualToString:@"openemu.system.gg"])
+    if([self.systemIdentifier isEqualToString:@"openemu.system.gg"])
     {
         return OEIntRectMake(0, 0, 160, 144);
     }
@@ -302,11 +302,11 @@ static __weak GenPlusGameCore *_current;
 
 - (OEIntSize)aspectSize
 {
-    if([[self systemIdentifier] isEqualToString:@"openemu.system.gg"])
+    if([self.systemIdentifier isEqualToString:@"openemu.system.gg"])
     {
         return OEIntSizeMake(160, 144);
     }
-    else if([[self systemIdentifier] isEqualToString:@"openemu.system.sms"] || [[self systemIdentifier] isEqualToString:@"openemu.system.sg100"])
+    else if([self.systemIdentifier isEqualToString:@"openemu.system.sms"] || [self.systemIdentifier isEqualToString:@"openemu.system.sg100"])
     {
         return OEIntSizeMake(256 * (8.0/7.0), 192);
     }
@@ -644,27 +644,27 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
 - (void)setCheat:(NSString *)code setType:(NSString *)type setEnabled:(BOOL)enabled
 {
     // Sanitize
-    code = [code stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    code = [code stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
 
     // Genesis Plus GX expects cheats UPPERCASE
-    code = [code uppercaseString];
+    code = code.uppercaseString;
 
     // Remove any spaces
     code = [code stringByReplacingOccurrencesOfString:@" " withString:@""];
 
     if (enabled)
-        [cheatList setValue:@YES forKey:code];
+        cheatList[code] = @YES;
     else
         [cheatList removeObjectForKey:code];
 
     [self resetCheats];
 
-    NSArray *multipleCodes = [[NSArray alloc] init];
+    NSArray *multipleCodes = [NSArray array];
 
     // Apply enabled cheats found in dictionary
     for (id key in cheatList)
     {
-        if ([[cheatList valueForKey:key] isEqual:@YES])
+        if ([cheatList[key] isEqual:@YES])
         {
             // Handle multi-line cheats
             multipleCodes = [key componentsSeparatedByString:@"+"];
@@ -788,9 +788,11 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
                              ];
 
     // Different port configurations and multitap devices are used depending on the game
+    // NOTE: J-Cart games are automatically handled.
     // TODO: Identify supported Sega CD games by rominfo.domestic/rominfo.international?
     NSDictionary *multiTapGames =
     @{
+      //@"3cc6df243e714097f1599cf618f94d0b" : @(TeamPlayerPort1), // Aq Renkan Awa (Taiwan) (Unl)
       @"2b27a61cdae4492044bd273c5807de75" : @(TeamPlayerPort1), // Barkley Shut Up and Jam! (USA, Europe)
       @"952e40844509c5739f1e84ea7f9dfd90" : @(TeamPlayerPort1), // Barkley Shut Up and Jam 2 (USA)
       @"76aab0e8bc8e670a347676aaf0a0aea3" : @(TeamPlayerPort1), // College Football's National Championship (USA)
@@ -812,6 +814,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
       @"234bf02f7f7b6fdad65890424d3a8a8f" : @(TeamPlayerPort1), // NBA Jam (USA, Europe) (v1.1)
       @"338b8ed45e02d96f1ed31eaab59eaf43" : @(TeamPlayerPort1), // NBA Jam (USA, Europe)
       @"edeb01f0aa8aed3868db1179670db22f" : @(TeamPlayerPort1), // NBA Jam - Tournament Edition (World)
+      //@"b465081da2e268a1c045c1b0615bed75" : @(TeamPlayerPort1), // NBA Pro Basketball '94 (Japan)
       @"3d3c4c2dcc8631373b73cf11170dd4d7" : @(TeamPlayerPort1), // NCAA Final Four Basketball (USA)
       @"6e38acfb80ed7e0b1343fa4ffdc6477d" : @(TeamPlayerPort1), // NCAA Football (USA)
       @"035283320f792caa2b55129db21f0265" : @(TeamPlayerPort1), // NFL '95 (USA, Europe)
@@ -820,6 +823,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
       @"15a8114b96afcabcb2bd08acbc7a11c0" : @(TeamPlayerPort1), // Prime Time NFL Starring Deion Sanders (USA)
       @"a0003ccd281f9cc74aa2ef97fe23c2fc" : @(TeamPlayerPort1), // Puzzle & Action - Ichidanto-R (Japan)
       @"16b0f48a07baf1fa0df27453b7f008d4" : @(TeamPlayerPort1), // Puzzle & Action - Tanto-R (Japan)
+      //@"4abb0405b270695261494720a2af0783" : @(TeamPlayerPort1), // Shi Jie Zhi Bang Zheng Ba Zhan - World Pro Baseball 94 (Taiwan) (Unl)
       @"abddd42b2548e9b708991f689d726c9a" : @(TeamPlayerPort1), // Tiny Toon Adventures - Acme All-Stars (Europe)
       @"1def1d7dbe4ab6b9e1fc90093292de6a" : @(TeamPlayerPort1), // Tiny Toon Adventures - Acme All-Stars (USA, Korea)
       @"f314fe624d288b4e1228ae759bae1d86" : @(TeamPlayerPort1), // Unnecessary Roughness '95 (USA)
@@ -835,6 +839,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
       @"723db55d679ef169b8210764a5f76c4d" : @(GamepadPort1TeamPlayerPort2), // ATP Tour Championship Tennis (USA)
       @"5481f0cbab22ca071dad31dd3ca4f884" : @(GamepadPort1TeamPlayerPort2), // College Slam (USA)
       @"6a492e2983b2bc306eec905411ee24a8" : @(GamepadPort1TeamPlayerPort2), // Dino Dini's Soccer (Europe)
+      @"dea9dd7a01d774ccdfe68c835fe55a8a" : @(GamepadPort1TeamPlayerPort2), // J. League Pro Striker (Japan)
       @"f5f52249a5dc851864254935e185ea72" : @(GamepadPort1TeamPlayerPort2), // J. League Pro Striker (Japan) (v1.3)
       @"ada241db25d7832866b1e58af2038bc6" : @(GamepadPort1TeamPlayerPort2), // J. League Pro Striker 2 (Japan)
       @"a7046120d2a4b40949994c71177aec3c" : @(GamepadPort1TeamPlayerPort2), // J. League Pro Striker Perfect (Japan)
@@ -913,15 +918,15 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
 
     // Set six button controller override if needed
     uint8_t pad;
-    if([pad6Buttons containsObject:[[self ROMMD5] lowercaseString]])
+    if([pad6Buttons containsObject:self.ROMMD5.lowercaseString])
         pad = DEVICE_PAD6B; // Force six button controller
     else
         pad = DEVICE_PAD2B | DEVICE_PAD3B | DEVICE_PAD6B; // Auto-detects by presence of '6' byte in the cart header (rominfo.peripherals & 2)
 
     // Set multitap type configuration if detected
-    if (multiTapGames[[[self ROMMD5] lowercaseString]])
+    if (multiTapGames[self.ROMMD5.lowercaseString])
     {
-        _multiTapType = [[multiTapGames objectForKey:[[self ROMMD5] lowercaseString]] integerValue];
+        _multiTapType = [multiTapGames[self.ROMMD5.lowercaseString] integerValue];
 
         // 1-4 players: TeamPlayer in Port 1
         if (_multiTapType == TeamPlayerPort1)
