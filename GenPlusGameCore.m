@@ -36,6 +36,14 @@
 #include "shared.h"
 #include "scrc32.h"
 
+#define OptionDefault(_NAME_, _PREFKEY_) @{ OEGameCoreDisplayModeNameKey : _NAME_, OEGameCoreDisplayModePrefKeyNameKey : _PREFKEY_, OEGameCoreDisplayModeStateKey : @YES, }
+#define Option(_NAME_, _PREFKEY_) @{ OEGameCoreDisplayModeNameKey : _NAME_, OEGameCoreDisplayModePrefKeyNameKey : _PREFKEY_, OEGameCoreDisplayModeStateKey : @NO, }
+#define OptionIndented(_NAME_, _PREFKEY_) @{ OEGameCoreDisplayModeNameKey : _NAME_, OEGameCoreDisplayModePrefKeyNameKey : _PREFKEY_, OEGameCoreDisplayModeStateKey : @NO, OEGameCoreDisplayModeIndentationLevelKey : @(1), }
+#define OptionToggleable(_NAME_, _PREFKEY_) @{ OEGameCoreDisplayModeNameKey : _NAME_, OEGameCoreDisplayModePrefKeyNameKey : _PREFKEY_, OEGameCoreDisplayModeStateKey : @NO, OEGameCoreDisplayModeAllowsToggleKey : @YES, }
+#define OptionToggleableNoSave(_NAME_, _PREFKEY_) @{ OEGameCoreDisplayModeNameKey : _NAME_, OEGameCoreDisplayModePrefKeyNameKey : _PREFKEY_, OEGameCoreDisplayModeStateKey : @NO, OEGameCoreDisplayModeAllowsToggleKey : @YES, OEGameCoreDisplayModeDisallowPrefSaveKey : @YES, }
+#define Label(_NAME_) @{ OEGameCoreDisplayModeLabelKey : _NAME_, }
+#define SeparatorItem() @{ OEGameCoreDisplayModeSeparatorItemKey : @"",}
+
 static const double pal_fps = 53203424.0 / (3420.0 * 313.0);
 static const double ntsc_fps = 53693175.0 / (3420.0 * 262.0);
 
@@ -102,6 +110,7 @@ typedef NS_ENUM(NSInteger, MultiTapType)
     uint8_t *_videoBuffer;
     int16_t *_soundBuffer;
     NSMutableDictionary<NSString *, NSNumber *> *_cheatList;
+    NSMutableArray <NSMutableDictionary <NSString *, id> *> *_availableDisplayModes;
     NSURL *_romFile;
     MultiTapType _multiTapType;
 }
@@ -676,6 +685,84 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     }
 }
 
+# pragma mark - Display Mode
+
+- (NSArray <NSDictionary <NSString *, id> *> *)displayModes
+{
+    if (![self.systemIdentifier isEqualToString:@"openemu.system.gg"])
+        return nil;
+
+    if (_availableDisplayModes.count == 0)
+    {
+        _availableDisplayModes = [NSMutableArray array];
+
+        NSArray <NSDictionary <NSString *, id> *> *availableModesWithDefault =
+        @[
+          Label(@"Screen"),
+          OptionToggleable(@"LCD Ghosting", @"ggLCDFilter"),
+          ];
+
+        // Deep mutable copy
+        _availableDisplayModes = (NSMutableArray *)CFBridgingRelease(CFPropertyListCreateDeepCopy(kCFAllocatorDefault, (CFArrayRef)availableModesWithDefault, kCFPropertyListMutableContainers));
+    }
+
+    return [_availableDisplayModes copy];
+}
+
+- (void)changeDisplayWithMode:(NSString *)displayMode
+{
+    if (_availableDisplayModes.count == 0)
+        [self displayModes];
+
+    // First check if 'displayMode' is valid
+    BOOL isDisplayModeToggleable = NO;
+    BOOL isValidDisplayMode = NO;
+    BOOL displayModeState = NO;
+    NSString *displayModePrefKey;
+
+    for (NSDictionary *modeDict in _availableDisplayModes) {
+        if ([modeDict[OEGameCoreDisplayModeNameKey] isEqualToString:displayMode]) {
+            displayModeState = [modeDict[OEGameCoreDisplayModeStateKey] boolValue];
+            displayModePrefKey = modeDict[OEGameCoreDisplayModePrefKeyNameKey];
+            isDisplayModeToggleable = [modeDict[OEGameCoreDisplayModeAllowsToggleKey] boolValue];
+            isValidDisplayMode = YES;
+            break;
+        }
+    }
+
+    // Disallow a 'displayMode' not found in _availableDisplayModes
+    if (!isValidDisplayMode)
+        return;
+
+    // Handle option state changes
+    for (NSMutableDictionary *optionDict in _availableDisplayModes) {
+        NSString *modeName = optionDict[OEGameCoreDisplayModeNameKey];
+        NSString *prefKey  = optionDict[OEGameCoreDisplayModePrefKeyNameKey];
+
+        if (!modeName)
+            continue;
+        // Mutually exclusive option state change
+        else if ([modeName isEqualToString:displayMode] && !isDisplayModeToggleable)
+            optionDict[OEGameCoreDisplayModeStateKey] = @YES;
+        // Reset mutually exclusive options that are the same prefs group as 'displayMode'
+        else if (!isDisplayModeToggleable && [prefKey isEqualToString:displayModePrefKey])
+            optionDict[OEGameCoreDisplayModeStateKey] = @NO;
+        // Toggleable option state change
+        else if ([modeName isEqualToString:displayMode] && isDisplayModeToggleable)
+            optionDict[OEGameCoreDisplayModeStateKey] = @(!displayModeState);
+    }
+
+    // Game Gear: LCD ghosting / motion blur
+    // Required for proper display of some effects in a few games (James Pond 3, Power Drift, Super Monaco GP II)
+    if ([displayMode isEqualToString:@"LCD Ghosting"])
+    {
+        if (!displayModeState)
+            config.lcd = (uint8)(0.80 * 256);
+        else
+            config.lcd = 0;
+    }
+}
+
 # pragma mark - Misc Helper Methods
 
 - (void)applyCheat:(NSString *)code
@@ -737,7 +824,19 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     config.overscan = 0; /* 3 == FULL */
     config.gg_extra = 0; /* 1 = show extended Game Gear screen (256x192) */
     config.ntsc     = 0;
-    config.lcd      = 0;
+
+    // Only temporary, so core doesn't crash on an older OpenEmu version
+    if ([self respondsToSelector:@selector(displayModeInfo)]) {
+        BOOL isLCDFilterEnabled = [self.displayModeInfo[@"ggLCDFilter"] boolValue];
+        if (isLCDFilterEnabled)
+            [self changeDisplayWithMode:@"LCD Ghosting"];
+        else
+            config.lcd = 0;
+
+    }
+    else
+        config.lcd  = 0;
+
     config.render   = 0;
 
     /* initialize bitmap */
