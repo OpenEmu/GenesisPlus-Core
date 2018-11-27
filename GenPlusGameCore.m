@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015, OpenEmu Team
+ Copyright (c) 2018, OpenEmu Team
  
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -99,9 +99,9 @@ typedef NS_ENUM(NSInteger, MultiTapType)
 
 @interface GenPlusGameCore () <OEGenesisSystemResponderClient, OESegaCDSystemResponderClient>
 {
-    uint8_t *videoBuffer;
-    int16_t *soundBuffer;
-    NSMutableDictionary *cheatList;
+    uint8_t *_videoBuffer;
+    int16_t *_soundBuffer;
+    NSMutableDictionary<NSString *, NSNumber *> *_cheatList;
     NSURL *_romFile;
     MultiTapType _multiTapType;
 }
@@ -119,9 +119,9 @@ static __weak GenPlusGameCore *_current;
 {
     if((self = [super init]))
     {
-        videoBuffer = (uint8_t*)malloc(720 * 576 * 4);
-        soundBuffer = (int16_t *)malloc(2048 * 2 * 2);
-        cheatList = [NSMutableDictionary dictionary];
+        _videoBuffer = (uint8_t *)malloc(720 * 576 * sizeof(uint32_t));
+        _soundBuffer = (int16_t *)malloc(2048 * 2 * sizeof(int16_t));
+        _cheatList = [NSMutableDictionary dictionary];
     }
 
 	_current = self;
@@ -131,8 +131,8 @@ static __weak GenPlusGameCore *_current;
 
 - (void)dealloc
 {
-    free(videoBuffer);
-    free(soundBuffer);
+    free(_videoBuffer);
+    free(_soundBuffer);
 }
 
 # pragma mark - Execution
@@ -142,13 +142,13 @@ static __weak GenPlusGameCore *_current;
     _romFile = [NSURL fileURLWithPath:path];
 
     // Set CD BIOS and BRAM/RAM Cart paths
-    snprintf(CD_BIOS_EU, sizeof(CD_BIOS_EU), "%s%sbios_CD_E.bin", [[self biosDirectoryPath] fileSystemRepresentation], "/");
-    snprintf(CD_BIOS_US, sizeof(CD_BIOS_US), "%s%sbios_CD_U.bin", [[self biosDirectoryPath] fileSystemRepresentation], "/");
-    snprintf(CD_BIOS_JP, sizeof(CD_BIOS_JP), "%s%sbios_CD_J.bin", [[self biosDirectoryPath] fileSystemRepresentation], "/");
-    snprintf(CD_BRAM_EU, sizeof(CD_BRAM_EU), "%s%sscd_E.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
-    snprintf(CD_BRAM_US, sizeof(CD_BRAM_US), "%s%sscd_U.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
-    snprintf(CD_BRAM_JP, sizeof(CD_BRAM_JP), "%s%sscd_J.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
-    snprintf(CART_BRAM, sizeof(CART_BRAM), "%s%scart.brm", [[self batterySavesDirectoryPath] fileSystemRepresentation], "/");
+    snprintf(CD_BIOS_EU, sizeof(CD_BIOS_EU), "%s%sbios_CD_E.bin", self.biosDirectoryPath.fileSystemRepresentation, "/");
+    snprintf(CD_BIOS_US, sizeof(CD_BIOS_US), "%s%sbios_CD_U.bin", self.biosDirectoryPath.fileSystemRepresentation, "/");
+    snprintf(CD_BIOS_JP, sizeof(CD_BIOS_JP), "%s%sbios_CD_J.bin", self.biosDirectoryPath.fileSystemRepresentation, "/");
+    snprintf(CD_BRAM_EU, sizeof(CD_BRAM_EU), "%s%sscd_E.brm", self.batterySavesDirectoryPath.fileSystemRepresentation, "/");
+    snprintf(CD_BRAM_US, sizeof(CD_BRAM_US), "%s%sscd_U.brm", self.batterySavesDirectoryPath.fileSystemRepresentation, "/");
+    snprintf(CD_BRAM_JP, sizeof(CD_BRAM_JP), "%s%sscd_J.brm", self.batterySavesDirectoryPath.fileSystemRepresentation, "/");
+    snprintf(CART_BRAM, sizeof(CART_BRAM), "%s%scart.brm", self.batterySavesDirectoryPath.fileSystemRepresentation, "/");
 
     [self configureOptions];
 
@@ -167,7 +167,7 @@ static __weak GenPlusGameCore *_current;
         {
             config.region_detect = 3;
             region_code = REGION_JAPAN_NTSC;
-            NSLog(@"Genesis Plus GX: Forcing region to Japan for multi-region cart");
+            NSLog(@"[Genesis Plus GX] Forcing region to Japan for multi-region cart");
         }
     }
 
@@ -181,17 +181,17 @@ static __weak GenPlusGameCore *_current;
         bram_load();
 
     // Set battery saves dir and load sram
-    NSString *extensionlessFilename = [[_romFile lastPathComponent] stringByDeletingPathExtension];
-    NSURL *batterySavesDirectory = [NSURL fileURLWithPath:[self batterySavesDirectoryPath]];
-    [[NSFileManager defaultManager] createDirectoryAtURL:batterySavesDirectory withIntermediateDirectories:YES attributes:nil error:nil];
+    NSString *extensionlessFilename = _romFile.lastPathComponent.stringByDeletingPathExtension;
+    NSURL *batterySavesDirectory = [NSURL fileURLWithPath:self.batterySavesDirectoryPath];
+    [NSFileManager.defaultManager createDirectoryAtURL:batterySavesDirectory withIntermediateDirectories:YES attributes:nil error:nil];
     NSURL *saveFile = [batterySavesDirectory URLByAppendingPathComponent:[extensionlessFilename stringByAppendingPathExtension:@"sav"]];
 
     if ([saveFile checkResourceIsReachableAndReturnError:nil])
     {
         NSData *saveData = [NSData dataWithContentsOfURL:saveFile];
-        memcpy(sram.sram, [saveData bytes], 0x10000);
+        memcpy(sram.sram, saveData.bytes, 0x10000);
         sram.crc = crc32(0, sram.sram, 0x10000);
-        NSLog(@"GenesisPlusGX: Loaded sram");
+        NSLog(@"[Genesis Plus GX] Loaded sram");
     }
 
     if([self.systemIdentifier isEqualToString:@"openemu.system.sg"] || [self.systemIdentifier isEqualToString:@"openemu.system.scd"])
@@ -213,8 +213,8 @@ static __weak GenPlusGameCore *_current;
     else
         system_frame_sms(0);
 
-    int samples = audio_update(soundBuffer);
-    [[self ringBufferAtIndex:0] write:soundBuffer maxLength:samples << 2];
+    int samples = audio_update(_soundBuffer);
+    [[self ringBufferAtIndex:0] write:_soundBuffer maxLength:samples << 2];
 }
 
 - (void)resetEmulation
@@ -241,8 +241,8 @@ static __weak GenPlusGameCore *_current;
         if ((filesize != 0) || (crc32(0, &sram.sram[0], 0x10000) != sram.crc))
         {
             NSError *error = nil;
-            NSString *extensionlessFilename = [[_romFile lastPathComponent] stringByDeletingPathExtension];
-            NSURL *batterySavesDirectory = [NSURL fileURLWithPath:[self batterySavesDirectoryPath]];
+            NSString *extensionlessFilename = _romFile.lastPathComponent.stringByDeletingPathExtension;
+            NSURL *batterySavesDirectory = [NSURL fileURLWithPath:self.batterySavesDirectoryPath];
             NSURL *saveFile = [batterySavesDirectory URLByAppendingPathComponent:[extensionlessFilename stringByAppendingPathExtension:@"sav"]];
 
             // copy SRAM data
@@ -253,9 +253,9 @@ static __weak GenPlusGameCore *_current;
             sram.crc = crc32(0, sram.sram, 0x10000);
 
             if (error)
-                NSLog(@"GenesisPlusGX: Error writing sram file: %@", error);
+                NSLog(@"[Genesis Plus GX] Error writing sram file: %@", error);
             else
-                NSLog(@"GenesisPlusGX: Saved sram file: %@", saveFile);
+                NSLog(@"[Genesis Plus GX] Saved sram file: %@", saveFile);
         }
     }
 
@@ -277,7 +277,7 @@ static __weak GenPlusGameCore *_current;
 - (const void *)getVideoBufferWithHint:(void *)hint
 {
     if (!hint) {
-        hint = videoBuffer;
+        hint = _videoBuffer;
     }
 
     return bitmap.data = (uint8_t*)hint;
@@ -347,7 +347,7 @@ static __weak GenPlusGameCore *_current;
     int serial_size = STATE_SIZE;
     NSMutableData *stateData = [NSMutableData dataWithLength:serial_size];
 
-    if(!state_save([stateData mutableBytes]))
+    if(!state_save(stateData.mutableBytes))
     {
         NSError *error = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreCouldNotSaveStateError userInfo:@{
             NSLocalizedDescriptionKey : @"Save state data could not be written",
@@ -375,17 +375,17 @@ static __weak GenPlusGameCore *_current;
     }
 
     int serial_size = STATE_SIZE;
-    if(serial_size != [data length])
+    if(serial_size != data.length)
     {
         NSError *error = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreStateHasWrongSizeError userInfo:@{
             NSLocalizedDescriptionKey : @"Save state has wrong file size.",
-            NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The size of the file %@ does not have the right size, %d expected, got: %ld.", fileName, serial_size, [data length]],
+            NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The size of the file %@ does not have the right size, %d expected, got: %ld.", fileName, serial_size, data.length],
         }];
         block(NO, error);
         return;
     }
 
-    if(!state_load((uint8_t *)[data bytes]))
+    if(!state_load((uint8_t *)data.bytes))
     {
         NSError *error = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreCouldNotLoadStateError userInfo:@{
             NSLocalizedDescriptionKey : @"The save state data could not be read",
@@ -418,15 +418,15 @@ static __weak GenPlusGameCore *_current;
 
 - (BOOL)deserializeState:(NSData *)state withError:(NSError **)outError
 {
-    const void *bytes = [state bytes];
-    size_t length = [state length];
+    const void *bytes = state.bytes;
+    size_t length = state.length;
     size_t serialSize = STATE_SIZE;
 
     if(serialSize != length) {
         if (outError) {
             *outError = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreStateHasWrongSizeError userInfo:@{
                 NSLocalizedDescriptionKey : @"Save state has wrong file size.",
-                NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The size of the save state does not have the right size, %lu expected, got: %ld.", serialSize, [state length]],
+                NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The size of the save state does not have the right size, %lu expected, got: %ld.", serialSize, state.length],
             }];
         }
 
@@ -653,18 +653,18 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     code = [code stringByReplacingOccurrencesOfString:@" " withString:@""];
 
     if (enabled)
-        cheatList[code] = @YES;
+        _cheatList[code] = @YES;
     else
-        [cheatList removeObjectForKey:code];
+        [_cheatList removeObjectForKey:code];
 
     [self resetCheats];
 
-    NSArray *multipleCodes = [NSArray array];
+    NSArray<NSString *> *multipleCodes = [NSArray array];
 
     // Apply enabled cheats found in dictionary
-    for (id key in cheatList)
+    for (NSString *key in _cheatList)
     {
-        if ([cheatList[key] isEqual:@YES])
+        if ([_cheatList[key] boolValue])
         {
             // Handle multi-line cheats
             multipleCodes = [key componentsSeparatedByString:@"+"];
@@ -684,7 +684,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     clear_cheats();
 
     /* interpret code and give it an index */
-    decode_cheat((char *)[code UTF8String], maxcheats);
+    decode_cheat((char *)code.UTF8String, maxcheats);
 
     /* increment cheat count */
     maxcheats++;
@@ -745,7 +745,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     bitmap.width      = 720;
     bitmap.height     = 576;
     bitmap.pitch      = bitmap.width * sizeof(uint32_t);
-    bitmap.data       = (uint8_t *)videoBuffer;
+    bitmap.data       = (uint8_t *)_videoBuffer;
 }
 
 - (void)configureInput
@@ -753,7 +753,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     _multiTapType = MultiTapTypeNone;
 
     // Overrides: Six button controller-supported games missing '6' byte in cart header, so they cannot be auto-detected
-    NSArray *pad6Buttons = @[
+    NSArray<NSString *> *pad6Buttons = @[
                              @"b04c06df1009c60182df902a4ec7c959", // Batman Forever (World)
                              @"7b144947f6e8842dd4419d5166cddff6", // Boogerman - A Pick and Flick Adventure (Europe)
                              @"265a10bf2ea2d1ee30e6cde631d54474", // Boogerman - A Pick and Flick Adventure (USA)
@@ -790,7 +790,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     // Different port configurations and multitap devices are used depending on the game
     // NOTE: J-Cart games are automatically handled.
     // TODO: Identify supported Sega CD games by rominfo.domestic/rominfo.international?
-    NSDictionary *multiTapGames =
+    NSDictionary<NSString *, NSNumber *> *multiTapGames =
     @{
       //@"3cc6df243e714097f1599cf618f94d0b" : @(TeamPlayerPort1), // Aq Renkan Awa (Taiwan) (Unl)
       @"2b27a61cdae4492044bd273c5807de75" : @(TeamPlayerPort1), // Barkley Shut Up and Jam! (USA, Europe)
@@ -1563,7 +1563,7 @@ void RAMCheatUpdate(void)
         /* apply RAM patch */
         //if (cheatlist[index].data & 0xFF00)
         //if (cheatlist[index].data & 0x00FF) // For LSB?
-        BOOL isSega8bit = [[_current systemIdentifier] isEqualToString:@"openemu.system.gg"] || [[_current systemIdentifier] isEqualToString:@"openemu.system.sms"] || [[_current systemIdentifier] isEqualToString:@"openemu.system.sg1000"];
+        BOOL isSega8bit = [_current.systemIdentifier isEqualToString:@"openemu.system.gg"] || [_current.systemIdentifier isEqualToString:@"openemu.system.sms"] || [_current.systemIdentifier isEqualToString:@"openemu.system.sg1000"];
         // TODO: Figure out why this is. Some PAR cheats for Genesis don't work otherwise.
         if (isSega8bit ? cheatlist[index].data & 0xFF00 : cheatlist[index].data & 0x00FF)
         {
