@@ -315,7 +315,7 @@ static __weak GenPlusGameCore *_current;
     {
         return OEIntSizeMake(160, 144);
     }
-    else if([self.systemIdentifier isEqualToString:@"openemu.system.sms"] || [self.systemIdentifier isEqualToString:@"openemu.system.sg100"])
+    else if([self.systemIdentifier isEqualToString:@"openemu.system.sms"] || [self.systemIdentifier isEqualToString:@"openemu.system.sg1000"])
     {
         return OEIntSizeMake(256 * (8.0/7.0), 192);
     }
