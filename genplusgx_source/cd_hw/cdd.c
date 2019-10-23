@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  CD drive processor & CD-DA fader
  *
- *  Copyright (C) 2012-2018  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2012-2019  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -198,15 +198,12 @@ void cdd_init(int samplerate)
 
 void cdd_reset(void)
 {
-  /* reset cycle counter */
-  cdd.cycles = 0;
-  
   /* reset drive access latency */
   cdd.latency = 0;
-  
+
   /* reset track index */
   cdd.index = 0;
-  
+
   /* reset logical block address */
   cdd.lba = 0;
 
@@ -1148,7 +1145,7 @@ int cdd_load(char *filename, char *header)
     }
 
     /* Automatically try to open associated subcode data file */
-    strncpy(&fname[strlen(fname) - 4], ".sub", 4);
+    memcpy(&fname[strlen(fname) - 4], ".sub", 4);
     cdd.toc.sub = cdStreamOpen(fname);
 
     /* return 1 if loaded file is CD image file */
@@ -1922,9 +1919,9 @@ void cdd_process(void)
       {
         /* Fixes a few games hanging because they expect data to be read with some delay */
         /* Radical Rex needs at least one interrupt delay */
-        /* Wolf Team games (Anet Futatabi, Cobra Command, Earnest Evans, Road Avenger & Time Gal) need at least 10 interrupts delay  */
-        /* Space Adventure Cobra (2nd morgue scene) needs at least 13 interrupts delay (incl. seek time, so 10 is OK) */
-        cdd.latency = 10;
+        /* Wolf Team games (Anet Futatabi, Aisle Lord, Cobra Command, Earnest Evans, Road Avenger & Time Gal) need at least 11 interrupts delay  */
+        /* Space Adventure Cobra (2nd morgue scene) needs at least 13 interrupts delay (incl. seek time, so 11 is OK) */
+        cdd.latency = 11;
       }
 
       /* CD drive seek time */

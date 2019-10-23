@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  SG-1000, Master System & Game Gear cartridge hardware support
  *
- *  Copyright (C) 2007-2018  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2019  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -243,6 +243,7 @@ static const rominfo_t game_list[] =
   /* games requiring 3-D Glasses & Sega Light Phaser */
   {0xFBE5CFBB, 1, 0, SYSTEM_LIGHTPHASER, MAPPER_SEGA, SYSTEM_SMS, REGION_USA}, /* Missile Defense 3D */
   {0xE79BB689, 1, 0, SYSTEM_LIGHTPHASER, MAPPER_SEGA, SYSTEM_SMS, REGION_USA}, /* Missile Defense 3D [BIOS] */
+  {0x43DEF05D, 1, 0, SYSTEM_LIGHTPHASER, MAPPER_SEGA, SYSTEM_SMS, REGION_USA}, /* Missile Defense 3D [Proto] */
 
   /* games requiring Sega Light Phaser */
   {0x861B6E79, 0, 0, SYSTEM_LIGHTPHASER, MAPPER_SEGA, SYSTEM_SMS, REGION_USA}, /* Assault City [Light Phaser] */
@@ -609,9 +610,6 @@ void sms_cart_reset(void)
     }
   }
 
-  /* reset Memory Control register (RAM & I/O are enabled, either BIOS or Cartridge ROM are enabled) */
-  io_reg[0x0E] = bios_rom.pages ? 0xE0 : 0xA8;
-
   /* reset Z80 memory map */
   mapper_reset();
 
@@ -742,14 +740,62 @@ int sms_cart_region_detect(void)
 int sms_cart_context_save(uint8 *state)
 {
   int bufferptr = 0;
-  save_param(slot.fcr, 4);
+
+  /* check if cartridge ROM is disabled */
+  if (io_reg[0x0E] & 0x40)
+  {
+    /* save Boot ROM mapper settings */
+    save_param(bios_rom.fcr, 4);
+  }
+  else
+  {
+    /* save cartridge mapper settings */
+    save_param(cart_rom.fcr, 4);
+  }
+
+  /* support for SG-1000 games with extra RAM */
+  if ((cart_rom.mapper == MAPPER_RAM_8K) || (cart_rom.mapper == MAPPER_RAM_8K_EXT1))
+  {
+    /* 8KB extra RAM */
+    save_param(work_ram + 0x2000, 0x2000);
+  }
+  else if (cart_rom.mapper == MAPPER_RAM_2K)
+  {
+    /* 2KB extra RAM */
+    save_param(work_ram + 0x2000, 0x800);
+  }
+
   return bufferptr;
 }
 
 int sms_cart_context_load(uint8 *state)
 {
   int bufferptr = 0;
-  load_param(slot.fcr, 4);
+
+  /* check if cartridge ROM is disabled */
+  if (io_reg[0x0E] & 0x40)
+  {
+    /* load Boot ROM mapper settings */
+    load_param(bios_rom.fcr, 4);
+  }
+  else
+  {
+    /* load cartridge mapper settings */
+    load_param(cart_rom.fcr, 4);
+  }
+
+  /* support for SG-1000 games with extra RAM */
+  if ((cart_rom.mapper == MAPPER_RAM_8K) || (cart_rom.mapper == MAPPER_RAM_8K_EXT1))
+  {
+    /* 8KB extra RAM */
+    load_param(work_ram + 0x2000, 0x2000);
+  }
+  else if (cart_rom.mapper == MAPPER_RAM_2K)
+  {
+    /* 2KB extra RAM */
+    load_param(work_ram + 0x2000, 0x800);
+  }
+
   return bufferptr;
 }
 

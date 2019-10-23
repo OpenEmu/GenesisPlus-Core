@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  Mega CD / Sega CD hardware
  *
- *  Copyright (C) 2012-2018  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2012-2019  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -255,7 +255,7 @@ static void word_ram_z80_write_byte(unsigned int address, unsigned int data)
   }
   else
   {
-    WRITE_BYTE(m68k.memory_map[offset].base, address & 0xffff, data);
+    *(uint16 *)(m68k.memory_map[offset].base + (address & 0xfffe)) = data | (data << 8);
   }
 }
 
@@ -293,7 +293,7 @@ static void word_ram_m68k_write_byte(unsigned int address, unsigned int data)
   }
   else
   {
-    WRITE_BYTE(m68k.memory_map[offset].base, address & 0xffff, data);
+    *(uint16 *)(m68k.memory_map[offset].base + (address & 0xfffe)) = data | (data << 8);
   }
 }
 
@@ -345,7 +345,7 @@ static void word_ram_s68k_write_byte(unsigned int address, unsigned int data)
   }
   else
   {
-    WRITE_BYTE(s68k.memory_map[offset].base, address & 0xffff, data);
+    *(uint16 *)(s68k.memory_map[offset].base + (address & 0xfffe)) = data | (data << 8);
   }
 }
 
@@ -445,10 +445,16 @@ static void s68k_poll_sync(unsigned int reg_mask)
   /* relative MAIN-CPU cycle counter */
   unsigned int cycles = (s68k.cycles * MCYCLES_PER_LINE) / SCYCLES_PER_LINE;
 
-  /* sync MAIN-CPU with SUB-CPU */
   if (!m68k.stopped)
   {
+    /* save current MAIN-CPU end cycle count (recursive execution is possible) */
+    int end_cycle = m68k.cycle_end;
+
+    /* sync MAIN-CPU with SUB-CPU */
     m68k_run(cycles);
+
+    /* restore MAIN-CPU end cycle count */
+    m68k.cycle_end = end_cycle;
   }
 
   /* MAIN-CPU idle on register polling ? */
@@ -669,8 +675,14 @@ static unsigned int scd_read_word(unsigned int address)
       /* relative MAIN-CPU cycle counter */
       unsigned int cycles = (s68k.cycles * MCYCLES_PER_LINE) / SCYCLES_PER_LINE;
 
+      /* save current MAIN-CPU end cycle count (recursive execution is possible) */
+      int end_cycle = m68k.cycle_end;
+
       /* sync MAIN-CPU with SUB-CPU (Mighty Morphin Power Rangers) */
       m68k_run(cycles);
+
+      /* restore MAIN-CPU end cycle count */
+      m68k.cycle_end = end_cycle;
     }
 
     s68k_poll_detect(3 << (address & 0x1e));
@@ -781,7 +793,7 @@ static void scd_write_byte(unsigned int address, unsigned int data)
 
     case 0x01: /* RESET status */
     {
-      /* RESET bit cleared ? */      
+      /* RESET bit cleared ? */
       if (!(data & 0x01))
       {
         /* reset CD hardware */
@@ -1059,7 +1071,7 @@ static void scd_write_word(unsigned int address, unsigned int data)
       /* only update LED status (register $00 is reserved for MAIN-CPU, use $06 instead) */
       scd.regs[0x06>>1].byte.h = data >> 8;
 
-      /* RESET bit cleared ? */      
+      /* RESET bit cleared ? */
       if (!(data & 0x01))
       {
         /* reset CD hardware */
@@ -1614,6 +1626,9 @@ void scd_reset(int hard)
     s68k.cycles = 0;
     s68k_pulse_reset();
     s68k_pulse_halt();
+
+    /* Reset frame cycle counter */
+    scd.cycles = 0;
   }
   else
   {
@@ -1637,10 +1652,7 @@ void scd_reset(int hard)
 
   /* Reset Timer & Stopwatch counters */
   scd.timer = 0;
-  scd.stopwatch = 0;
-
-  /* Reset frame cycle counter */
-  scd.cycles = 0;
+  scd.stopwatch = s68k.cycles;
 
   /* Clear pending interrupts */
   scd.pending = 0;
@@ -1648,6 +1660,9 @@ void scd_reset(int hard)
   /* Clear CPU polling detection */
   memset(&m68k.poll, 0, sizeof(m68k.poll));
   memset(&s68k.poll, 0, sizeof(s68k.poll));
+
+  /* reset CDD cycle counter */
+  cdd.cycles = (scd.cycles - s68k.cycles) * 3;
 
   /* Reset CD hardware */
   cdd_reset();

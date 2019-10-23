@@ -1,8 +1,10 @@
 /***************************************************************************************
- *  Genesis Plus
- *  Savestate support
+ *  Genesis Plus GX
+ *  CPU hooking support
  *
- *  Copyright (C) 2007-2019  Eke-Eke (Genesis Plus GX)
+ *  HOOK_CPU should be defined in a makefile or MSVC project to enable this functionality
+ *
+ *  Copyright feos (2019)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -36,22 +38,16 @@
  *
  ****************************************************************************************/
 
-#ifndef _STATE_H_
-#define _STATE_H_
+#ifdef HOOK_CPU
 
-#define STATE_SIZE    0xfd000
-#define STATE_VERSION "GENPLUS-GX 1.7.5"
+#include <stdio.h>
+#include "cpuhook.h"
 
-#define load_param(param, size) \
-  memcpy(param, &state[bufferptr], size); \
-  bufferptr+= size;
+void(*cpu_hook)(hook_type_t type, int width, unsigned int address, unsigned int value) = NULL;
 
-#define save_param(param, size) \
-  memcpy(&state[bufferptr], param, size); \
-  bufferptr+= size;
+void set_cpu_hook(void(*hook)(hook_type_t type, int width, unsigned int address, unsigned int value))
+{
+	cpu_hook = hook;
+}
 
-/* Function prototypes */
-extern int state_load(unsigned char *state);
-extern int state_save(unsigned char *state);
-
-#endif
+#endif /* HOOK_CPU */

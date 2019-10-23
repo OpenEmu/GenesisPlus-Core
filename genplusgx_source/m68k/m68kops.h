@@ -20967,7 +20967,10 @@ static void m68k_op_stop(void)
     uint new_sr = OPER_I_16();
     CPU_STOPPED |= STOP_LEVEL_STOP;
     m68ki_set_sr(new_sr);
-    SET_CYCLES(m68ki_cpu.cycle_end - 4*MUL); 
+    if (CPU_STOPPED)
+    {
+      SET_CYCLES(m68ki_cpu.cycle_end - 4*MUL); 
+    }
     return;
   }
   m68ki_exception_privilege_violation();
@@ -24235,7 +24238,7 @@ static const opcode_handler_struct m68k_opcode_handler_table[] =
   {m68k_op_btst_8_r_al         , 0xf1ff, 0x0139, 16},
   {m68k_op_btst_8_r_pcdi       , 0xf1ff, 0x013a, 12},
   {m68k_op_btst_8_r_pcix       , 0xf1ff, 0x013b, 14},
-  {m68k_op_btst_8_r_i          , 0xf1ff, 0x013c,  8},
+  {m68k_op_btst_8_r_i          , 0xf1ff, 0x013c, 10},
   {m68k_op_bchg_8_r_pi7        , 0xf1ff, 0x015f, 12},
   {m68k_op_bchg_8_r_pd7        , 0xf1ff, 0x0167, 14},
   {m68k_op_bchg_8_r_aw         , 0xf1ff, 0x0178, 16},

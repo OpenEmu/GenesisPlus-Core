@@ -1,8 +1,12 @@
 /***************************************************************************************
- *  Genesis Plus
- *  Savestate support
+ *  Genesis Plus GX
+ *  CPU hooking support
  *
- *  Copyright (C) 2007-2019  Eke-Eke (Genesis Plus GX)
+ *  HOOK_CPU should be defined in a makefile or MSVC project to enable this functionality
+ *
+ *  Copyright DrMefistO (2018-2019)
+ *
+ *  Copyright feos (2019)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -36,22 +40,52 @@
  *
  ****************************************************************************************/
 
-#ifndef _STATE_H_
-#define _STATE_H_
+#ifndef _CPUHOOK_H_
+#define _CPUHOOK_H_
 
-#define STATE_SIZE    0xfd000
-#define STATE_VERSION "GENPLUS-GX 1.7.5"
 
-#define load_param(param, size) \
-  memcpy(param, &state[bufferptr], size); \
-  bufferptr+= size;
+typedef enum {
+  HOOK_ANY      = (0 << 0),
+  
+  // M68K
+  HOOK_M68K_E   = (1 << 0),
+  HOOK_M68K_R   = (1 << 1),
+  HOOK_M68K_W   = (1 << 2),
+  HOOK_M68K_RW  = HOOK_M68K_R | HOOK_M68K_W,
+  
+  // VDP
+  HOOK_VRAM_R   = (1 << 3),
+  HOOK_VRAM_W   = (1 << 4),
+  HOOK_VRAM_RW  = HOOK_VRAM_R | HOOK_VRAM_W,
+  
+  HOOK_CRAM_R   = (1 << 5),
+  HOOK_CRAM_W   = (1 << 6),
+  HOOK_CRAM_RW  = HOOK_CRAM_R | HOOK_CRAM_W,
+  
+  HOOK_VSRAM_R  = (1 << 7),
+  HOOK_VSRAM_W  = (1 << 8),
+  HOOK_VSRAM_RW = HOOK_VSRAM_R | HOOK_VSRAM_W,
+  
+  // Z80
+  HOOK_Z80_E    = (1 << 9),
+  HOOK_Z80_R    = (1 << 10),
+  HOOK_Z80_W    = (1 << 11),
+  HOOK_Z80_RW   = HOOK_Z80_R | HOOK_Z80_W,
+  
+  // REGS
+  HOOK_VDP_REG  = (1 << 12),
+  HOOK_M68K_REG = (1 << 13),
+} hook_type_t;
 
-#define save_param(param, size) \
-  memcpy(&state[bufferptr], param, size); \
-  bufferptr+= size;
 
-/* Function prototypes */
-extern int state_load(unsigned char *state);
-extern int state_save(unsigned char *state);
+/* CPU hook is called on read, write, and execute.
+ */
+void (*cpu_hook)(hook_type_t type, int width, unsigned int address, unsigned int value);
 
-#endif
+/* Use set_cpu_hook() to assign a callback that can process the data provided
+ * by cpu_hook().
+ */
+void set_cpu_hook(void(*hook)(hook_type_t type, int width, unsigned int address, unsigned int value));
+
+
+#endif /* _CPUHOOK_H_ */
