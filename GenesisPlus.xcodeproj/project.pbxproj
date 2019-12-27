@@ -35,6 +35,26 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		2EDBDEB023B2BB6A0034791A /* block.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDE8D23B2BB6A0034791A /* block.c */; };
+		2EDBDEB123B2BB6A0034791A /* framing.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDE8E23B2BB6A0034791A /* framing.c */; };
+		2EDBDEB323B2BB6A0034791A /* info.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDE9223B2BB6A0034791A /* info.c */; };
+		2EDBDEB423B2BB6A0034791A /* mdct.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDE9423B2BB6A0034791A /* mdct.c */; };
+		2EDBDEB523B2BB6A0034791A /* codebook.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDE9723B2BB6A0034791A /* codebook.c */; };
+		2EDBDEB623B2BB6A0034791A /* floor0.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDE9823B2BB6A0034791A /* floor0.c */; };
+		2EDBDEB923B2BB6A0034791A /* res012.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDE9E23B2BB6A0034791A /* res012.c */; };
+		2EDBDEBB23B2BB6A0034791A /* sharedbook.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDEA223B2BB6A0034791A /* sharedbook.c */; };
+		2EDBDEBD23B2BB6A0034791A /* floor1.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDEA423B2BB6A0034791A /* floor1.c */; };
+		2EDBDEBE23B2BB6A0034791A /* synthesis.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDEA523B2BB6A0034791A /* synthesis.c */; };
+		2EDBDEBF23B2BB6A0034791A /* mapping0.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDEA823B2BB6A0034791A /* mapping0.c */; };
+		2EDBDEC023B2BB6A0034791A /* bitwise.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDEAA23B2BB6A0034791A /* bitwise.c */; };
+		2EDBDEC123B2BB6A0034791A /* registry.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDEAB23B2BB6A0034791A /* registry.c */; };
+		2EDBDEC223B2BB6A0034791A /* vorbisfile.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDEAC23B2BB6A0034791A /* vorbisfile.c */; };
+		2EDBDEC323B2BB6A0034791A /* window.c in Sources */ = {isa = PBXBuildFile; fileRef = 2EDBDEAD23B2BB6A0034791A /* window.c */; };
+		2EDBDEC923B4B6CD0034791A /* configure.in in Resources */ = {isa = PBXBuildFile; fileRef = 2EDBDEC423B4B6CD0034791A /* configure.in */; };
+		2EDBDECA23B4B6CD0034791A /* README in Resources */ = {isa = PBXBuildFile; fileRef = 2EDBDEC523B4B6CD0034791A /* README */; };
+		2EDBDECB23B4B6CD0034791A /* COPYING in Resources */ = {isa = PBXBuildFile; fileRef = 2EDBDEC623B4B6CD0034791A /* COPYING */; };
+		2EDBDECC23B4B6CD0034791A /* CHANGELOG in Resources */ = {isa = PBXBuildFile; fileRef = 2EDBDEC723B4B6CD0034791A /* CHANGELOG */; };
+		2EDBDECD23B4B6CD0034791A /* Version_script.in in Resources */ = {isa = PBXBuildFile; fileRef = 2EDBDEC823B4B6CD0034791A /* Version_script.in */; };
 		82287C39101E9DB40072172D /* GenPlusGameCore.m in Sources */ = {isa = PBXBuildFile; fileRef = 82287C34101E9DB40072172D /* GenPlusGameCore.m */; };
 		879243AE1C0D044B0064C515 /* xe_1ap.c in Sources */ = {isa = PBXBuildFile; fileRef = 879243AC1C0D044B0064C515 /* xe_1ap.c */; };
 		879243B11C0D05120064C515 /* graphic_board.c in Sources */ = {isa = PBXBuildFile; fileRef = 879243AF1C0D05120064C515 /* graphic_board.c */; };
@@ -130,6 +150,44 @@
 		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		089C167FFE841241C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
+		2EDBDE8A23B2BB6A0034791A /* asm_arm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asm_arm.h; sourceTree = "<group>"; };
+		2EDBDE8B23B2BB6A0034791A /* ogg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ogg.h; sourceTree = "<group>"; };
+		2EDBDE8C23B2BB6A0034791A /* ivorbiscodec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ivorbiscodec.h; sourceTree = "<group>"; };
+		2EDBDE8D23B2BB6A0034791A /* block.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = block.c; sourceTree = "<group>"; };
+		2EDBDE8E23B2BB6A0034791A /* framing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = framing.c; sourceTree = "<group>"; };
+		2EDBDE8F23B2BB6A0034791A /* mdct_lookup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mdct_lookup.h; sourceTree = "<group>"; };
+		2EDBDE9123B2BB6A0034791A /* misc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = misc.h; sourceTree = "<group>"; };
+		2EDBDE9223B2BB6A0034791A /* info.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = info.c; sourceTree = "<group>"; };
+		2EDBDE9323B2BB6A0034791A /* lsp_lookup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lsp_lookup.h; sourceTree = "<group>"; };
+		2EDBDE9423B2BB6A0034791A /* mdct.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mdct.c; sourceTree = "<group>"; };
+		2EDBDE9523B2BB6A0034791A /* os.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = os.h; sourceTree = "<group>"; };
+		2EDBDE9623B2BB6A0034791A /* window.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = window.h; sourceTree = "<group>"; };
+		2EDBDE9723B2BB6A0034791A /* codebook.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = codebook.c; sourceTree = "<group>"; };
+		2EDBDE9823B2BB6A0034791A /* floor0.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = floor0.c; sourceTree = "<group>"; };
+		2EDBDE9923B2BB6A0034791A /* backends.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = backends.h; sourceTree = "<group>"; };
+		2EDBDE9A23B2BB6A0034791A /* registry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = registry.h; sourceTree = "<group>"; };
+		2EDBDE9D23B2BB6A0034791A /* window_lookup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = window_lookup.h; sourceTree = "<group>"; };
+		2EDBDE9E23B2BB6A0034791A /* res012.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = res012.c; sourceTree = "<group>"; };
+		2EDBDE9F23B2BB6A0034791A /* ivorbisfile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ivorbisfile.h; sourceTree = "<group>"; };
+		2EDBDEA123B2BB6A0034791A /* config_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config_types.h; sourceTree = "<group>"; };
+		2EDBDEA223B2BB6A0034791A /* sharedbook.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sharedbook.c; sourceTree = "<group>"; };
+		2EDBDEA423B2BB6A0034791A /* floor1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = floor1.c; sourceTree = "<group>"; };
+		2EDBDEA523B2BB6A0034791A /* synthesis.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = synthesis.c; sourceTree = "<group>"; };
+		2EDBDEA623B2BB6A0034791A /* block.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = block.h; sourceTree = "<group>"; };
+		2EDBDEA723B2BB6A0034791A /* mdct.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mdct.h; sourceTree = "<group>"; };
+		2EDBDEA823B2BB6A0034791A /* mapping0.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mapping0.c; sourceTree = "<group>"; };
+		2EDBDEA923B2BB6A0034791A /* os_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = os_types.h; sourceTree = "<group>"; };
+		2EDBDEAA23B2BB6A0034791A /* bitwise.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bitwise.c; sourceTree = "<group>"; };
+		2EDBDEAB23B2BB6A0034791A /* registry.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = registry.c; sourceTree = "<group>"; };
+		2EDBDEAC23B2BB6A0034791A /* vorbisfile.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = vorbisfile.c; sourceTree = "<group>"; };
+		2EDBDEAD23B2BB6A0034791A /* window.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = window.c; sourceTree = "<group>"; };
+		2EDBDEAE23B2BB6A0034791A /* codec_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codec_internal.h; sourceTree = "<group>"; };
+		2EDBDEAF23B2BB6A0034791A /* codebook.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codebook.h; sourceTree = "<group>"; };
+		2EDBDEC423B4B6CD0034791A /* configure.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = configure.in; sourceTree = "<group>"; };
+		2EDBDEC523B4B6CD0034791A /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		2EDBDEC623B4B6CD0034791A /* COPYING */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
+		2EDBDEC723B4B6CD0034791A /* CHANGELOG */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CHANGELOG; sourceTree = "<group>"; };
+		2EDBDEC823B4B6CD0034791A /* Version_script.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Version_script.in; sourceTree = "<group>"; };
 		82287C08101E9C2C0072172D /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		82287C33101E9DB40072172D /* GenPlusGameCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GenPlusGameCore.h; sourceTree = "<group>"; };
 		82287C34101E9DB40072172D /* GenPlusGameCore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GenPlusGameCore.m; sourceTree = "<group>"; };
@@ -352,6 +410,51 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		2EDBDE8923B2BB6A0034791A /* tremor */ = {
+			isa = PBXGroup;
+			children = (
+				2EDBDEC723B4B6CD0034791A /* CHANGELOG */,
+				2EDBDEC423B4B6CD0034791A /* configure.in */,
+				2EDBDEC623B4B6CD0034791A /* COPYING */,
+				2EDBDEC523B4B6CD0034791A /* README */,
+				2EDBDEC823B4B6CD0034791A /* Version_script.in */,
+				2EDBDE8A23B2BB6A0034791A /* asm_arm.h */,
+				2EDBDE8B23B2BB6A0034791A /* ogg.h */,
+				2EDBDE8C23B2BB6A0034791A /* ivorbiscodec.h */,
+				2EDBDE8D23B2BB6A0034791A /* block.c */,
+				2EDBDE8E23B2BB6A0034791A /* framing.c */,
+				2EDBDE8F23B2BB6A0034791A /* mdct_lookup.h */,
+				2EDBDE9123B2BB6A0034791A /* misc.h */,
+				2EDBDE9223B2BB6A0034791A /* info.c */,
+				2EDBDE9323B2BB6A0034791A /* lsp_lookup.h */,
+				2EDBDE9423B2BB6A0034791A /* mdct.c */,
+				2EDBDE9523B2BB6A0034791A /* os.h */,
+				2EDBDE9623B2BB6A0034791A /* window.h */,
+				2EDBDE9723B2BB6A0034791A /* codebook.c */,
+				2EDBDE9823B2BB6A0034791A /* floor0.c */,
+				2EDBDE9923B2BB6A0034791A /* backends.h */,
+				2EDBDE9A23B2BB6A0034791A /* registry.h */,
+				2EDBDE9D23B2BB6A0034791A /* window_lookup.h */,
+				2EDBDE9E23B2BB6A0034791A /* res012.c */,
+				2EDBDE9F23B2BB6A0034791A /* ivorbisfile.h */,
+				2EDBDEA123B2BB6A0034791A /* config_types.h */,
+				2EDBDEA223B2BB6A0034791A /* sharedbook.c */,
+				2EDBDEA423B2BB6A0034791A /* floor1.c */,
+				2EDBDEA523B2BB6A0034791A /* synthesis.c */,
+				2EDBDEA623B2BB6A0034791A /* block.h */,
+				2EDBDEA723B2BB6A0034791A /* mdct.h */,
+				2EDBDEA823B2BB6A0034791A /* mapping0.c */,
+				2EDBDEA923B2BB6A0034791A /* os_types.h */,
+				2EDBDEAA23B2BB6A0034791A /* bitwise.c */,
+				2EDBDEAB23B2BB6A0034791A /* registry.c */,
+				2EDBDEAC23B2BB6A0034791A /* vorbisfile.c */,
+				2EDBDEAD23B2BB6A0034791A /* window.c */,
+				2EDBDEAE23B2BB6A0034791A /* codec_internal.h */,
+				2EDBDEAF23B2BB6A0034791A /* codebook.h */,
+			);
+			path = tremor;
+			sourceTree = "<group>";
+		};
 		32C88E010371C26100C91783 /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -406,6 +509,7 @@
 				94ED8A5814CF933700FF8901 /* state.h */,
 				94ED8A5914CF933700FF8901 /* system.c */,
 				94ED8A5A14CF933700FF8901 /* system.h */,
+				2EDBDE8923B2BB6A0034791A /* tremor */,
 				94ED8A5B14CF933700FF8901 /* types.h */,
 				94ED8A8014CF933700FF8901 /* vdp_ctrl.c */,
 				94ED8A8114CF933700FF8901 /* vdp_ctrl.h */,
@@ -597,12 +701,17 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EDBDECD23B4B6CD0034791A /* Version_script.in in Resources */,
+				2EDBDECA23B4B6CD0034791A /* README in Resources */,
 				8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */,
 				94ED8A9814CF933700FF8901 /* imageformat.txt in Resources */,
 				94ED8A9B14CF933700FF8901 /* svpdoc.txt in Resources */,
+				2EDBDEC923B4B6CD0034791A /* configure.in in Resources */,
+				2EDBDECC23B4B6CD0034791A /* CHANGELOG in Resources */,
 				94ED8B2B14CF933800FF8901 /* changes.txt in Resources */,
 				94ED8B2C14CF933800FF8901 /* license.txt in Resources */,
 				94ED8B2E14CF933800FF8901 /* readme.txt in Resources */,
+				2EDBDECB23B4B6CD0034791A /* COPYING in Resources */,
 				94ED8B3014CF933800FF8901 /* sms_ntsc.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -646,6 +755,8 @@
 				82287C39101E9DB40072172D /* GenPlusGameCore.m in Sources */,
 				879243B11C0D05120064C515 /* graphic_board.c in Sources */,
 				94ED8A9214CF933700FF8901 /* areplay.c in Sources */,
+				2EDBDEBB23B2BB6A0034791A /* sharedbook.c in Sources */,
+				2EDBDEB023B2BB6A0034791A /* block.c in Sources */,
 				94ED8A9414CF933700FF8901 /* ggenie.c in Sources */,
 				94ED8A9514CF933700FF8901 /* md_cart.c in Sources */,
 				94ED8A9614CF933700FF8901 /* sms_cart.c in Sources */,
@@ -659,29 +770,40 @@
 				948DA2B115AB906400C0EA78 /* pcm.c in Sources */,
 				948DA2B215AB906400C0EA78 /* scd.c in Sources */,
 				94ED8B1A14CF933800FF8901 /* activator.c in Sources */,
+				2EDBDEC223B2BB6A0034791A /* vorbisfile.c in Sources */,
+				2EDBDEBF23B2BB6A0034791A /* mapping0.c in Sources */,
 				94ED8B1B14CF933800FF8901 /* gamepad.c in Sources */,
 				94ED8B1C14CF933800FF8901 /* input.c in Sources */,
 				94ED8B1D14CF933800FF8901 /* lightgun.c in Sources */,
+				2EDBDEC323B2BB6A0034791A /* window.c in Sources */,
 				94ED8B1E14CF933800FF8901 /* mouse.c in Sources */,
 				94ED8B1F14CF933800FF8901 /* paddle.c in Sources */,
 				94ED8B2014CF933800FF8901 /* sportspad.c in Sources */,
 				94ED8B2114CF933800FF8901 /* teamplayer.c in Sources */,
 				948DA2B615AB93FA00C0EA78 /* terebi_oekaki.c in Sources */,
+				2EDBDEB523B2BB6A0034791A /* codebook.c in Sources */,
 				94ED8A9C14CF933700FF8901 /* genesis.c in Sources */,
 				94ED8B2314CF933800FF8901 /* io_ctrl.c in Sources */,
+				2EDBDEB923B2BB6A0034791A /* res012.c in Sources */,
+				2EDBDEC023B2BB6A0034791A /* bitwise.c in Sources */,
 				94ED8B2414CF933800FF8901 /* loadrom.c in Sources */,
+				2EDBDEB323B2BB6A0034791A /* info.c in Sources */,
 				879243AE1C0D044B0064C515 /* xe_1ap.c in Sources */,
 				94ED8B2814CF933800FF8901 /* mem68k.c in Sources */,
+				2EDBDEBE23B2BB6A0034791A /* synthesis.c in Sources */,
 				94ED8B2914CF933800FF8901 /* membnk.c in Sources */,
 				94ED8B2A14CF933800FF8901 /* memz80.c in Sources */,
 				94ED8B3714CF933800FF8901 /* state.c in Sources */,
+				2EDBDEBD23B2BB6A0034791A /* floor1.c in Sources */,
 				94ED8B3814CF933800FF8901 /* system.c in Sources */,
 				87E0514D1B18092700E870E1 /* scrc32.c in Sources */,
 				94ED8B4D14CF933800FF8901 /* vdp_ctrl.c in Sources */,
 				94ED8B4E14CF933800FF8901 /* vdp_render.c in Sources */,
 				94ED8B2514CF933800FF8901 /* m68kcpu.c in Sources */,
+				2EDBDEB123B2BB6A0034791A /* framing.c in Sources */,
 				948DA2BE15AB98D600C0EA78 /* s68kcpu.c in Sources */,
 				94ED8B2D14CF933800FF8901 /* md_ntsc.c in Sources */,
+				2EDBDEB623B2BB6A0034791A /* floor0.c in Sources */,
 				94ED8B2F14CF933800FF8901 /* sms_ntsc.c in Sources */,
 				94ED8B3214CF933800FF8901 /* eq.c in Sources */,
 				87F3EF951FA3E385007CF75E /* psg.c in Sources */,
@@ -691,8 +813,10 @@
 				94ED8B4F14CF933800FF8901 /* z80.c in Sources */,
 				941FF4F9162A4BAE005A9427 /* eeprom_93c.c in Sources */,
 				941FF4FA162A4BAE005A9427 /* eeprom_i2c.c in Sources */,
+				2EDBDEC123B2BB6A0034791A /* registry.c in Sources */,
 				941FF4FB162A4BAE005A9427 /* eeprom_spi.c in Sources */,
 				941FF4FE162A4BE1005A9427 /* blip_buf.c in Sources */,
+				2EDBDEB423B2BB6A0034791A /* mdct.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -730,11 +854,13 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/genplusgx_source\"";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
 				OTHER_CFLAGS = (
 					"-DLSB_FIRST",
 					"-DUSE_32BPP_RENDERING",
+					"-DUSE_LIBTREMOR",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.openemu.${PRODUCT_NAME:identifier}";
 				PRODUCT_NAME = GenesisPlus;
@@ -750,11 +876,13 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/genplusgx_source\"";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "\"$(USER_LIBRARY_DIR)/Application Support/OpenEmu/Cores\"";
 				OTHER_CFLAGS = (
 					"-DLSB_FIRST",
 					"-DUSE_32BPP_RENDERING",
+					"-DUSE_LIBTREMOR",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.openemu.${PRODUCT_NAME:identifier}";
 				PRODUCT_NAME = GenesisPlus;
