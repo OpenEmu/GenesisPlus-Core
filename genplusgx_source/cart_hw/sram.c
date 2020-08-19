@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  Backup RAM support
  *
- *  Copyright (C) 2007-2016  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2007-2020  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -147,6 +147,13 @@ void sram_init()
       sram.start = 0x400001;
       sram.end = 0x40ffff;
     }
+    else if ((rominfo.checksum == 0x0000) && (rominfo.realchecksum == 0x1f7f) && (READ_BYTE(cart.rom + 0x80000,0x1b0) == 0x52) && (READ_BYTE(cart.rom + 0x80000,0x1b1) == 0x41))
+    {
+      /* Radica - Sensible Soccer Plus edition (use bankswitching) */
+      sram.on = 1;
+      sram.start = 0x200001;
+      sram.end = 0x203fff;
+    }
     else if ((strstr(rominfo.ROMType,"SF") != NULL) && (strstr(rominfo.product,"001") != NULL))
     {
       /* SF-001 */
@@ -214,8 +221,7 @@ unsigned int sram_read_byte(unsigned int address)
 
 unsigned int sram_read_word(unsigned int address)
 {
-  address &= 0xfffe;
-  return (sram.sram[address + 1] | (sram.sram[address] << 8));
+  return READ_WORD(sram.sram, address & 0xfffe);
 }
 
 void sram_write_byte(unsigned int address, unsigned int data)
@@ -225,7 +231,5 @@ void sram_write_byte(unsigned int address, unsigned int data)
 
 void sram_write_word(unsigned int address, unsigned int data)
 {
-  address &= 0xfffe;
-  sram.sram[address] = data >> 8;
-  sram.sram[address + 1] = data & 0xff;
+  WRITE_WORD(sram.sram, address & 0xfffe, data);
 }

@@ -28,7 +28,7 @@ typedef struct
     uint8 padtype;
 } t_input_config;
 
-struct
+typedef struct
 {
     char version[16];
     uint8 hq_fm;
@@ -62,7 +62,7 @@ struct
     uint8 lcd;
     uint8 render;
     t_input_config input[MAX_INPUTS];
-} config;
+} t_config;
 
 extern char GG_ROM[256];
 extern char AR_ROM[256];
@@ -75,6 +75,8 @@ extern char CD_BIOS_JP[256];
 extern char MS_BIOS_US[256];
 extern char MS_BIOS_EU[256];
 extern char MS_BIOS_JP[256];
+
+extern t_config config;
 
 void osd_input_update(void);
 int load_archive(char *filename, unsigned char *buffer, int maxsize, char *extension);

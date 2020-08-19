@@ -47,6 +47,8 @@
 static const double pal_fps = 53203424.0 / (3420.0 * 313.0);
 static const double ntsc_fps = 53693175.0 / (3420.0 * 262.0);
 
+t_config config;
+
 char GG_ROM[256];
 char AR_ROM[256];
 char SK_ROM[256];
