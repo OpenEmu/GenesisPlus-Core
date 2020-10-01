@@ -138,9 +138,9 @@
 		879243AD1C0D044B0064C515 /* xe_1ap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xe_1ap.h; sourceTree = "<group>"; };
 		879243AF1C0D05120064C515 /* graphic_board.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = graphic_board.c; sourceTree = "<group>"; };
 		879243B01C0D05120064C515 /* graphic_board.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = graphic_board.h; sourceTree = "<group>"; };
-		87D7BFC01F9841EE000B38DE /* OESMSSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OESMSSystemResponderClient.h; path = ../OpenEmu/SegaMasterSystem/OESMSSystemResponderClient.h; sourceTree = "<group>"; };
-		87D7BFC11F9841F8000B38DE /* OEGGSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OEGGSystemResponderClient.h; path = ../OpenEmu/GameGear/OEGGSystemResponderClient.h; sourceTree = "<group>"; };
-		87D7BFC21F984206000B38DE /* OESG1000SystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OESG1000SystemResponderClient.h; path = "../OpenEmu/SG-1000/OESG1000SystemResponderClient.h"; sourceTree = "<group>"; };
+		87D7BFC01F9841EE000B38DE /* OESMSSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OESMSSystemResponderClient.h; path = ../OpenEmu/SystemPlugins/SegaMasterSystem/OESMSSystemResponderClient.h; sourceTree = "<group>"; };
+		87D7BFC11F9841F8000B38DE /* OEGGSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OEGGSystemResponderClient.h; path = ../OpenEmu/SystemPlugins/GameGear/OEGGSystemResponderClient.h; sourceTree = "<group>"; };
+		87D7BFC21F984206000B38DE /* OESG1000SystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OESG1000SystemResponderClient.h; path = "../OpenEmu/SystemPlugins/SG-1000/OESG1000SystemResponderClient.h"; sourceTree = "<group>"; };
 		87E0514A1B18092700E870E1 /* osd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = osd.h; sourceTree = "<group>"; };
 		87E0514B1B18092700E870E1 /* scrc32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = scrc32.c; sourceTree = "<group>"; };
 		87E0514C1B18092700E870E1 /* scrc32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scrc32.h; sourceTree = "<group>"; };
@@ -156,7 +156,7 @@
 		941FF4F8162A4BAE005A9427 /* eeprom_spi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = eeprom_spi.h; sourceTree = "<group>"; };
 		941FF4FC162A4BE1005A9427 /* blip_buf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blip_buf.c; sourceTree = "<group>"; };
 		941FF4FD162A4BE1005A9427 /* blip_buf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = blip_buf.h; sourceTree = "<group>"; };
-		946C18AE17148D5200C64BF9 /* OESegaCDSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OESegaCDSystemResponderClient.h; path = "../OpenEmu/Sega CD/OESegaCDSystemResponderClient.h"; sourceTree = "<group>"; };
+		946C18AE17148D5200C64BF9 /* OESegaCDSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OESegaCDSystemResponderClient.h; path = "../OpenEmu/SystemPlugins/Sega CD/OESegaCDSystemResponderClient.h"; sourceTree = "<group>"; };
 		948DA2A115AB906400C0EA78 /* cd_cart.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cd_cart.c; sourceTree = "<group>"; };
 		948DA2A215AB906400C0EA78 /* cd_cart.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cd_cart.h; sourceTree = "<group>"; };
 		948DA2A315AB906400C0EA78 /* cdc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cdc.c; sourceTree = "<group>"; };
@@ -256,7 +256,7 @@
 		94ED8A8514CF933700FF8901 /* osd_cpu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = osd_cpu.h; sourceTree = "<group>"; };
 		94ED8A8614CF933700FF8901 /* z80.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = z80.c; sourceTree = "<group>"; };
 		94ED8A8714CF933700FF8901 /* z80.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = z80.h; sourceTree = "<group>"; };
-		C6B948191365164700A425F0 /* OEGenesisSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OEGenesisSystemResponderClient.h; path = ../OpenEmu/Genesis/OEGenesisSystemResponderClient.h; sourceTree = "<group>"; };
+		C6B948191365164700A425F0 /* OEGenesisSystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OEGenesisSystemResponderClient.h; path = ../OpenEmu/SystemPlugins/Genesis/OEGenesisSystemResponderClient.h; sourceTree = "<group>"; };
 		C6D120F1171130E700E868A8 /* OpenEmuBase.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = OpenEmuBase.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D2F7E65807B2D6F200F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -570,7 +570,6 @@
 		089C1669FE841209C02AAC07 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 0700;
 			};
 			buildConfigurationList = 1DEB913E08733D840010E9CD /* Build configuration list for PBXProject "GenesisPlus" */;
