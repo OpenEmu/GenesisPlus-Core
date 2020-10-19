@@ -1,7 +1,7 @@
 #ifndef _S_CRC32_H
 #define _S_CRC32_H
 
-static const unsigned long crc_table[256] = {
+static const unsigned int crc_table[256] = {
   0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
   0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
   0xe0d5e91eL, 0x97d2d988L, 0x09b64c2bL, 0x7eb17cbdL, 0xe7b82d07L,
@@ -61,7 +61,7 @@ static const unsigned long crc_table[256] = {
 #define DO4_CRC32(buf) DO2_CRC32(buf); DO2_CRC32(buf);
 #define DO8_CRC32(buf) DO4_CRC32(buf); DO4_CRC32(buf);
 
-unsigned long crc32(unsigned long crc, const unsigned char *buf, unsigned int len)
+unsigned int crc32(unsigned int crc, const unsigned char *buf, unsigned int len)
 {
 	if (buf == 0) return 0L;
 	crc = crc ^ 0xffffffffL;
