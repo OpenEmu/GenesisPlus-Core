@@ -19,7 +19,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1.7.4.13</string>
+	<string>1.7.4.14</string>
 	<key>NSPrincipalClass</key>
 	<string>OEGameCoreController</string>
 	<key>OEGameCoreClass</key>
@@ -122,7 +122,7 @@
 	<key>OEGameCorePlayerCount</key>
 	<string>8</string>
 	<key>OEProjectURL</key>
-	<string>http://code.google.com/p/genplus-gx</string>
+	<string>https://github.com/ekeeke/Genesis-Plus-GX</string>
 	<key>OESystemIdentifiers</key>
 	<array>
 		<string>openemu.system.sg1000</string>
