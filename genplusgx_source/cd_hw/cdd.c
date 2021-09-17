@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  CD drive processor & CD-DA fader
  *
- *  Copyright (C) 2012-2020  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2012-2021  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -315,7 +315,11 @@ int cdd_load(char *filename, char *header)
   /* open file */
   fd = cdStreamOpen(filename);
   if (!fd)
-    return (-1);
+  {
+    /* do not return an error as this could be a ROM loaded in memory */
+    /* which should be handled by load_archive function */
+    return (0);
+  }
 
 #if defined(USE_LIBCHDR)
   if (!memcmp("chd", &filename[strlen(filename) - 3], 3) || !memcmp("CHD", &filename[strlen(filename) - 3], 3))
@@ -1795,7 +1799,7 @@ void cdd_process(void)
   {
     case 0x00:  /* Get Drive Status */
     {
-      /* RS0-RS8 are normally unchanged unless reported drive status needs to be updated (i.e previous drive command has been processed) */
+      /* RS0-RS1 are normally unchanged unless reported drive status needs to be updated (i.e previous drive command has been processed) */
       /* Note: this function is called one 75hz frame ahead of CDD update so latency counter is always one step ahead of upcoming status */
       /* Radical Rex and Annet Futatabi both need at least respectively 2 and 3 interrupts with 'playing' status returned before sectors start getting incremented */
       if (cdd.latency <= 3)
@@ -1806,8 +1810,37 @@ void cdd_process(void)
         /* check if RS1 indicated invalid track infos (during seeking) */
         if (scd.regs[0x38>>1].byte.l == 0x0f)
         {
-          /* seeking has ended so we return valid track infos, e.g current track number in RS2-RS3 (fixes Lunar - The Silver Star) */
-          scd.regs[0x38>>1].byte.l = 0x02;
+          /* seeking has ended so we return valid track infos, e.g current absolute time by default (fixes Lunar - The Silver Star) */
+          int lba = cdd.lba + 150;
+          scd.regs[0x38>>1].byte.l = 0x00;
+          scd.regs[0x3a>>1].w = lut_BCD_16[(lba/75)/60];
+          scd.regs[0x3c>>1].w = lut_BCD_16[(lba/75)%60];
+          scd.regs[0x3e>>1].w = lut_BCD_16[(lba%75)];
+          scd.regs[0x40>>1].byte.h = cdd.toc.tracks[cdd.index].type ? 0x04 : 0x00; /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
+        }
+
+        /* otherwise, check if RS2-RS8 need to be updated */
+        else if (scd.regs[0x38>>1].byte.l == 0x00)
+        {
+          /* current absolute time */
+          int lba = cdd.lba + 150;
+          scd.regs[0x3a>>1].w = lut_BCD_16[(lba/75)/60];
+          scd.regs[0x3c>>1].w = lut_BCD_16[(lba/75)%60];
+          scd.regs[0x3e>>1].w = lut_BCD_16[(lba%75)];
+          scd.regs[0x40>>1].byte.h = cdd.toc.tracks[cdd.index].type ? 0x04 : 0x00; /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
+        }
+        else if (scd.regs[0x38>>1].byte.l == 0x01)
+        {
+          /* current track relative time */
+          int lba = abs(cdd.lba - cdd.toc.tracks[cdd.index].start);
+          scd.regs[0x3a>>1].w = lut_BCD_16[(lba/75)/60];
+          scd.regs[0x3c>>1].w = lut_BCD_16[(lba/75)%60];
+          scd.regs[0x3e>>1].w = lut_BCD_16[(lba%75)];
+          scd.regs[0x40>>1].byte.h = cdd.toc.tracks[cdd.index].type ? 0x04 : 0x00; /* Current block flags in RS8 (bit0 = mute status, bit1: pre-emphasis status, bit2: track type) */
+        }
+        else if (scd.regs[0x38>>1].byte.l == 0x02)
+        {
+          /* current track number */
           scd.regs[0x3a>>1].w = (cdd.index < cdd.toc.last) ? lut_BCD_16[cdd.index + 1] : 0x0A0A;
         }
       }

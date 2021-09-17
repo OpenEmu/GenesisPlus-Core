@@ -733,6 +733,7 @@
 				OTHER_CFLAGS = (
 					"-DLSB_FIRST",
 					"-DUSE_32BPP_RENDERING",
+					"-DMAXROMSIZE=33554432",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.openemu.${PRODUCT_NAME:identifier}";
 				PRODUCT_NAME = GenesisPlus;
@@ -753,6 +754,7 @@
 				OTHER_CFLAGS = (
 					"-DLSB_FIRST",
 					"-DUSE_32BPP_RENDERING",
+					"-DMAXROMSIZE=33554432",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.openemu.${PRODUCT_NAME:identifier}";
 				PRODUCT_NAME = GenesisPlus;
