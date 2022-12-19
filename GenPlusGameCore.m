@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2018, OpenEmu Team
+ Copyright (c) 2022, OpenEmu Team
  
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -34,7 +34,6 @@
 #import <OpenGL/gl.h>
 
 #include "shared.h"
-#include "scrc32.h"
 
 #define OptionDefault(_NAME_, _PREFKEY_) @{ OEGameCoreDisplayModeNameKey : _NAME_, OEGameCoreDisplayModePrefKeyNameKey : _PREFKEY_, OEGameCoreDisplayModeStateKey : @YES, }
 #define Option(_NAME_, _PREFKEY_) @{ OEGameCoreDisplayModeNameKey : _NAME_, OEGameCoreDisplayModePrefKeyNameKey : _PREFKEY_, OEGameCoreDisplayModeStateKey : @NO, }
@@ -53,6 +52,7 @@ char GG_ROM[256];
 char AR_ROM[256];
 char SK_ROM[256];
 char SK_UPMEM[256];
+char MD_BIOS[256];
 char GG_BIOS[256];
 char MS_BIOS_EU[256];
 char MS_BIOS_JP[256];
@@ -796,12 +796,14 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     /* sound options */
     config.psg_preamp     = 150;
     config.fm_preamp      = 100;
+    config.cdda_volume    = 100;
+    config.pcm_volume     = 100;
     config.hq_fm          = 1; /* high-quality FM resampling (slower) */
     config.hq_psg         = 1; /* high-quality PSG resampling (slower) */
-    config.filter         = 0; /* no filter */
-    config.lp_range       = 0x7fff; /* 0.5 in 0.16 fixed point */
-    config.low_freq       = 880;
-    config.high_freq      = 5000;
+    config.filter         = 1; /* single-pole low-pass filter (6 dB/octave) */
+    config.lp_range       = 0x9999; /* 0.6 in 0.16 fixed point */
+    config.low_freq       = 880;  // 200
+    config.high_freq      = 5000; // 8000
     config.lg             = 100;
     config.mg             = 100;
     config.hg             = 100;
@@ -810,6 +812,9 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     config.mono           = 0; /* STEREO output */
 #ifdef HAVE_YM3438_CORE
     config.ym3438         = 0;
+#endif
+#ifdef HAVE_OPLL_CORE
+   config.opll            = 0;
 #endif
 
     /* system options */
@@ -820,7 +825,9 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     config.force_dtack    = 0;
     config.addr_error     = 1;
     config.bios           = 0;
-    config.lock_on        = 0;
+    config.lock_on        = 0; 
+    config.add_on         = 0; /* = HW_ADDON_AUTO (or HW_ADDON_MEGACD, HW_ADDON_MEGASD & HW_ADDON_NONE) */
+    config.cd_latency     = 1;
 
     /* video options */
     config.overscan = 0; /* 3 == FULL */
@@ -833,13 +840,15 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
         if (isLCDFilterEnabled)
             [self changeDisplayWithMode:@"LCD Ghosting"];
         else
-            config.lcd = 0;
+            config.lcd = 0; /* 0.8 fixed point */
 
     }
     else
         config.lcd  = 0;
 
-    config.render   = 0;
+    config.render   = 0; /* 1 = double resolution output (only when interlaced mode 2 is enabled) */
+    config.enhanced_vscroll = 0;
+    config.enhanced_vscroll_limit = 8;
 
     /* initialize bitmap */
     memset(&bitmap, 0, sizeof(bitmap));

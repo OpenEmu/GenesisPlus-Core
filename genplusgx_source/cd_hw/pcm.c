@@ -2,7 +2,7 @@
  *  Genesis Plus
  *  PCM sound chip (315-5476A) (RF5C164 compatible)
  *
- *  Copyright (C) 2012-2016  Eke-Eke (Genesis Plus GX)
+ *  Copyright (C) 2012-2021  Eke-Eke (Genesis Plus GX)
  *
  *  Redistribution and use of this code or any derivative works are permitted
  *  provided that the following conditions are met:
@@ -183,7 +183,11 @@ void pcm_run(unsigned int length)
       if (r < -32768) r = -32768;
       else if (r > 32767) r = 32767;
 
-      /* update Blip Buffer */
+      /* PCM output mixing level (0-100%) */
+      l = (l * config.pcm_volume) / 100;
+      r = (r * config.pcm_volume) / 100;
+
+      /* update blip buffer */
       blip_add_delta_fast(snd.blips[1], i, l-prev_l, r-prev_r);
       prev_l = l;
       prev_r = r;
@@ -226,10 +230,10 @@ void pcm_update(unsigned int samples)
   pcm.cycles = 0;
 }
 
-void pcm_write(unsigned int address, unsigned char data)
+void pcm_write(unsigned int address, unsigned char data, unsigned int cycles)
 {
-  /* synchronize PCM chip with SUB-CPU */
-  int clocks = s68k.cycles - pcm.cycles;
+  /* synchronize PCM chip with CPU */
+  int clocks = cycles - pcm.cycles;
   if (clocks > 0)
   {
     /* number of internal clocks (samples) to run */
@@ -350,10 +354,10 @@ void pcm_write(unsigned int address, unsigned char data)
   }
 }
 
-unsigned char pcm_read(unsigned int address)
+unsigned char pcm_read(unsigned int address, unsigned int cycles)
 {
   /* synchronize PCM chip with SUB-CPU */
-  int clocks = s68k.cycles - pcm.cycles;
+  int clocks = cycles - pcm.cycles;
   if (clocks > 0)
   {
     /* number of internal clocks (samples) to run */

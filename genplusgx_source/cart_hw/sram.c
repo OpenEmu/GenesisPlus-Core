@@ -37,7 +37,6 @@
  ****************************************************************************************/
 
 #include "shared.h"
-#include "scrc32.h"
 
 T_SRAM sram;
 
@@ -60,7 +59,7 @@ T_SRAM sram;
  *
  * Assuming max. 64k backup RAM throughout
  ****************************************************************************/
-void sram_init()
+void sram_init(void)
 {
   /* disable Backup RAM by default */
   sram.detected = sram.on = sram.custom = sram.start = sram.end = 0;
