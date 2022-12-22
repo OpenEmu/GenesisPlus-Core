@@ -775,6 +775,9 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     /* interpret code and give it an index */
     decode_cheat((char *)code.UTF8String, maxcheats);
 
+    // Enable the cheat by default
+    cheatlist[maxcheats].enable = 1;
+
     /* increment cheat count */
     maxcheats++;
 
@@ -787,8 +790,9 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     /* clear existing ROM patches */
     clear_cheats();
 
-    /* remove cheats from the list */
-    remove_cheats();
+    /* delete all cheats */
+    maxcheats = maxROMcheats = maxRAMcheats = 0;
+    memset(cheatlist, 0, sizeof(cheatlist));
 }
 
 - (void)configureOptions
@@ -1347,201 +1351,234 @@ static uint32_t decode_cheat(char *string, int index)
     uint16_t data = 0;
     uint8_t ref = 0;
 
-    /* 16-bit Game Genie code (ABCD-EFGH) */
-    if ((strlen(string) >= 9) && (string[4] == '-'))
-    {
-        /* 16-bit system only */
-        if ((system_hw & SYSTEM_PBC) != SYSTEM_MD)
-        {
-            return 0;
-        }
+    if ((system_hw & SYSTEM_PBC) == SYSTEM_MD){
+        /*If system is Genesis-based*/
 
-        for (i = 0; i < 8; i++)
+        /*Game-Genie*/
+        if ((strlen(string) >= 9) && (string[4] == '-'))
         {
-            if (i == 4) string++;
-            p = strchr (ggvalidchars, *string++);
-            if (p == NULL) return 0;
-            n = p - ggvalidchars;
-
-            switch (i)
+            for (i = 0; i < 8; i++)
             {
-                case 0:
-                    data |= n << 3;
-                    break;
-
-                case 1:
-                    data |= n >> 2;
-                    address |= (n & 3) << 14;
-                    break;
-
-                case 2:
-                    address |= n << 9;
-                    break;
-
-                case 3:
-                    address |= (n & 0xF) << 20 | (n >> 4) << 8;
-                    break;
-
-                case 4:
-                    data |= (n & 1) << 12;
-                    address |= (n >> 1) << 16;
-                    break;
-
-                case 5:
-                    data |= (n & 1) << 15 | (n >> 1) << 8;
-                    break;
-
-                case 6:
-                    data |= (n >> 3) << 13;
-                    address |= (n & 7) << 5;
-                    break;
-
-                case 7:
-                    address |= n;
-                    break;
+                if (i == 4) string++;
+                p = strchr (ggvalidchars, *string++);
+                if (!p)
+                    return 0;
+                n = p - ggvalidchars;
+                switch (i)
+                {
+                    case 0:
+                        data |= n << 3;
+                        break;
+                    case 1:
+                        data |= n >> 2;
+                        address |= (n & 3) << 14;
+                        break;
+                    case 2:
+                        address |= n << 9;
+                        break;
+                    case 3:
+                        address |= (n & 0xF) << 20 | (n >> 4) << 8;
+                        break;
+                    case 4:
+                        data |= (n & 1) << 12;
+                        address |= (n >> 1) << 16;
+                        break;
+                    case 5:
+                        data |= (n & 1) << 15 | (n >> 1) << 8;
+                        break;
+                    case 6:
+                        data |= (n >> 3) << 13;
+                        address |= (n & 7) << 5;
+                        break;
+                    case 7:
+                        address |= n;
+                        break;
+                }
             }
+            /* code length */
+            len = 9;
         }
 
-        /* code length */
-        len = 9;
-    }
-
-    /* 8-bit Game Genie code (DDA-AAA-XXX) */
-    else if ((strlen(string) >= 11) && (string[3] == '-') && (string[7] == '-'))
-    {
-        /* 8-bit system only */
-        if ((system_hw & SYSTEM_PBC) == SYSTEM_MD)
+        /*Patch and PAR*/
+        else if ((strlen(string) >=9) && (string[6] == ':'))
         {
-            return 0;
-        }
-
-        /* decode 8-bit data */
-        for (i=0; i<2; i++)
-        {
-            p = strchr (arvalidchars, *string++);
-            if (p == NULL) return 0;
-            n = (p - arvalidchars) & 0xF;
-            data |= (n  << ((1 - i) * 4));
-        }
-
-        /* decode 16-bit address (low 12-bits) */
-        for (i=0; i<3; i++)
-        {
-            if (i==1) string++; /* skip separator */
-            p = strchr (arvalidchars, *string++);
-            if (p == NULL) return 0;
-            n = (p - arvalidchars) & 0xF;
-            address |= (n  << ((2 - i) * 4));
-        }
-
-        /* decode 16-bit address (high 4-bits) */
-        p = strchr (arvalidchars, *string++);
-        if (p == NULL) return 0;
-        n = (p - arvalidchars) & 0xF;
-        n ^= 0xF; /* bits inversion */
-        address |= (n  << 12);
-
-        /* RAM address are also supported */
-        if (address >= 0xC000)
-        {
-            /* convert to 24-bit Work RAM address */
-            address = 0xFF0000 | (address & 0x1FFF);
-        }
-
-        /* decode reference 8-bit data */
-        for (i=0; i<2; i++)
-        {
-            string++; /* skip separator and 2nd digit */
-            p = strchr (arvalidchars, *string++);
-            if (p == NULL) return 0;
-            n = (p - arvalidchars) & 0xF;
-            ref |= (n  << ((1 - i) * 4));
-        }
-        ref = (ref >> 2) | ((ref & 0x03) << 6);  /* 2-bit right rotation */
-        ref ^= 0xBA;  /* XOR */
-
-        /* update old data value */
-        cheatlist[index].old = ref;
-
-        /* code length */
-        len = 11;
-    }
-
-    /* Action Replay code */
-    else if (string[6] == ':')
-    {
-        if ((system_hw & SYSTEM_PBC) == SYSTEM_MD)
-        {
-            /* 16-bit code (AAAAAA:DDDD) */
-            if (strlen(string) < 11) return 0;
-
             /* decode 24-bit address */
             for (i=0; i<6; i++)
             {
                 p = strchr (arvalidchars, *string++);
-                if (p == NULL) return 0;
+                if (!p)
+                    return 0;
                 n = (p - arvalidchars) & 0xF;
                 address |= (n << ((5 - i) * 4));
             }
-
             /* decode 16-bit data */
             string++;
             for (i=0; i<4; i++)
             {
                 p = strchr (arvalidchars, *string++);
-                if (p == NULL) return 0;
+                if (!p)
+                    break;
                 n = (p - arvalidchars) & 0xF;
                 data |= (n << ((3 - i) * 4));
             }
-
             /* code length */
             len = 11;
         }
-        else
-        {
-            /* 8-bit code (xxAAAA:DD) */
-            if (strlen(string) < 9) return 0;
+    } else {
+        /*If System is Master-based*/
 
-            /* decode 16-bit address */
+        /*Game Genie*/
+        if ((strlen(string) >=7) && (string[3] == '-'))
+        {
+            /* decode 8-bit data */
+            for (i=0; i<2; i++)
+            {
+                p = strchr (arvalidchars, *string++);
+                if (!p)
+                    return 0;
+                n = (p - arvalidchars) & 0xF;
+                data |= (n << ((1 - i) * 4));
+            }
+
+            /* decode 16-bit address (low 12-bits) */
+            for (i=0; i<3; i++)
+            {
+                if (i==1) string++; /* skip separator */
+                p = strchr (arvalidchars, *string++);
+                if (!p)
+                    return 0;
+                n = (p - arvalidchars) & 0xF;
+                address |= (n << ((2 - i) * 4));
+            }
+            /* decode 16-bit address (high 4-bits) */
+            p = strchr (arvalidchars, *string++);
+            if (!p)
+                return 0;
+            n = (p - arvalidchars) & 0xF;
+            n ^= 0xF; /* bits inversion */
+            address |= (n << 12);
+            /* Optional: decode reference 8-bit data */
+            if (*string=='-')
+            {
+                for (i=0; i<2; i++)
+                {
+                    string++; /* skip separator and 2nd digit */
+                    p = strchr (arvalidchars, *string++);
+                    if (!p)
+                        return 0;
+                    n = (p - arvalidchars) & 0xF;
+                    ref |= (n << ((1 - i) * 4));
+                }
+                ref = (ref >> 2) | ((ref & 0x03) << 6); /* 2-bit right rotation */
+                ref ^= 0xBA; /* XOR */
+                /* code length */
+                len = 11;
+            }
+            else
+            {
+                /* code length */
+                len = 7;
+            }
+        }
+
+        /*Action Replay*/
+        else if ((strlen(string) >=9) && (string[4] == '-')){
             string+=2;
+            /* decode 16-bit address */
             for (i=0; i<4; i++)
             {
                 p = strchr (arvalidchars, *string++);
-                if (p == NULL) return 0;
+                if (!p)
+                    return 0;
+                n = (p - arvalidchars) & 0xF;
+                address |= (n << ((3 - i) * 4));
+                if (i==1) string++;
+            }
+            /* decode 8-bit data */
+            for (i=0; i<2; i++)
+            {
+                p = strchr (arvalidchars, *string++);
+                if (!p)
+                    return 0;
+                n = (p - arvalidchars) & 0xF;
+                data |= (n << ((1 - i) * 4));
+            }
+            /* code length */
+            len = 9;
+        }
+
+        /*Fusion RAM*/
+        else if ((strlen(string) >=7) && (string[4] == ':'))
+        {
+            /* decode 16-bit address */
+            for (i=0; i<4; i++)
+            {
+                p = strchr (arvalidchars, *string++);
+                if (!p)
+                    return 0;
                 n = (p - arvalidchars) & 0xF;
                 address |= (n << ((3 - i) * 4));
             }
-
-            /* ROM addresses are not supported */
-            if (address < 0xC000) return 0;
-
-            /* convert to 24-bit Work RAM address */
-            address = 0xFF0000 | (address & 0x1FFF);
-
             /* decode 8-bit data */
             string++;
             for (i=0; i<2; i++)
             {
                 p = strchr (arvalidchars, *string++);
-                if (p == NULL) return 0;
+                if (!p)
+                    return 0;
                 n = (p - arvalidchars) & 0xF;
-                data |= (n  << ((1 - i) * 4));
+                data |= (n << ((1 - i) * 4));
             }
+            /* code length */
+            len = 7;
+        }
 
+        /*Fusion ROM*/
+        else if ((strlen(string) >=9) && (string[6] == ':'))
+        {
+            /* decode reference 8-bit data */
+            for (i=0; i<2; i++)
+            {
+                p = strchr (arvalidchars, *string++);
+                if (!p)
+                    return 0;
+                n = (p - arvalidchars) & 0xF;
+                ref |= (n << ((1 - i) * 4));
+            }
+            /* decode 16-bit address */
+            for (i=0; i<4; i++)
+            {
+                p = strchr (arvalidchars, *string++);
+                if (!p)
+                    return 0;
+                n = (p - arvalidchars) & 0xF;
+                address |= (n << ((3 - i) * 4));
+            }
+            /* decode 8-bit data */
+            string++;
+            for (i=0; i<2; i++)
+            {
+                p = strchr (arvalidchars, *string++);
+                if (!p)
+                    return 0;
+                n = (p - arvalidchars) & 0xF;
+                data |= (n << ((1 - i) * 4));
+            }
             /* code length */
             len = 9;
         }
+        /* convert to 24-bit Work RAM address */
+        if (address >= 0xC000)
+            address = 0xFF0000 | (address & 0x1FFF);
     }
-
     /* Valid code found ? */
     if (len)
     {
         /* update cheat address & data values */
         cheatlist[index].address = address;
         cheatlist[index].data = data;
-        cheatlist[index].enable = 1; // Enable the cheat by default
+        cheatlist[index].old = ref;
     }
-
     /* return code length (0 = invalid) */
     return len;
 }
@@ -1549,16 +1586,41 @@ static uint32_t decode_cheat(char *string, int index)
 static void apply_cheats(void)
 {
     uint8_t *ptr;
-
+    int i;
     /* clear ROM&RAM patches counter */
     maxROMcheats = maxRAMcheats = 0;
 
-    int i;
     for (i = 0; i < maxcheats; i++)
     {
         if (cheatlist[i].enable)
         {
-            if (cheatlist[i].address < cart.romsize)
+            /* detect Work RAM patch */
+            if (cheatlist[i].address >= 0xFF0000)
+            {
+                /* add RAM patch */
+                cheatIndexes[maxRAMcheats++] = i;
+            }
+
+            /* check if Mega-CD game is running */
+            else if ((system_hw == SYSTEM_MCD) && !scd.cartridge.boot)
+            {
+                /* detect PRG-RAM patch (Sub-CPU side) */
+                if (cheatlist[i].address < 0x80000)
+                {
+                    /* add RAM patch */
+                    cheatIndexes[maxRAMcheats++] = i;
+                }
+
+                /* detect Word-RAM patch (Main-CPU side)*/
+                else if ((cheatlist[i].address >= 0x200000) && (cheatlist[i].address < 0x240000))
+                {
+                    /* add RAM patch */
+                    cheatIndexes[maxRAMcheats++] = i;
+                }
+            }
+
+            /* detect cartridge ROM patch */
+            else if (cheatlist[i].address < cart.romsize)
             {
                 if ((system_hw & SYSTEM_PBC) == SYSTEM_MD)
                 {
@@ -1571,16 +1633,13 @@ static void apply_cheats(void)
                     /* add ROM patch */
                     maxROMcheats++;
                     cheatIndexes[MAX_CHEATS - maxROMcheats] = i;
-
                     /* get current banked ROM address */
                     ptr = &z80_readmap[(cheatlist[i].address) >> 10][cheatlist[i].address & 0x03FF];
-
                     /* check if reference matches original ROM data */
                     if (((uint8_t)cheatlist[i].old) == *ptr)
                     {
                         /* patch data */
                         *ptr = cheatlist[i].data;
-
                         /* save patched ROM address */
                         cheatlist[i].prev = ptr;
                     }
@@ -1591,20 +1650,20 @@ static void apply_cheats(void)
                     }
                 }
             }
-            else if (cheatlist[i].address >= 0xFF0000)
-            {
-                /* add RAM patch */
-                cheatIndexes[maxRAMcheats++] = i;
-            }
         }
     }
 }
 
 static void clear_cheats(void)
 {
-    int i = maxcheats;
+    int i;
 
-    /* disable cheats in reversed order in case the same address is used by multiple patches */
+    /* no ROM patches with Mega-CD games */
+    if ((system_hw == SYSTEM_MCD) && !scd.cartridge.boot)
+        return;
+
+    /* disable cheats in reversed order in case the same address is used by multiple ROM patches */
+    i = maxcheats;
     while (i > 0)
     {
         if (cheatlist[i-1].enable)
@@ -1623,34 +1682,12 @@ static void clear_cheats(void)
                     {
                         /* restore original data */
                         *cheatlist[i-1].prev = cheatlist[i-1].old;
-
                         /* no more patched ROM address */
                         cheatlist[i-1].prev = NULL;
                     }
                 }
             }
         }
-
-        i--;
-    }
-}
-
-static void remove_cheats(void)
-{
-    int i = maxcheats;
-    while (i > 0)
-    {
-        if (cheatlist[i-1].enable)
-        {
-            cheatlist[i-1].text[0] = 0;
-            cheatlist[i-1].code[0] = 0;
-            cheatlist[i-1].address = 0;
-            cheatlist[i-1].data = 0;
-            cheatlist[i-1].enable = 0;
-
-            maxcheats--;
-        }
-
         i--;
     }
 }
@@ -1661,8 +1698,10 @@ static void remove_cheats(void)
  * Apply RAM patches (this should be called once per frame)
  *
  ****************************************************************************/
-void RAMCheatUpdate(void)
+static void RAMCheatUpdate(void)
 {
+    uint8_t *base;
+    uint32_t mask;
     int index, cnt = maxRAMcheats;
 
     while (cnt)
@@ -1670,20 +1709,36 @@ void RAMCheatUpdate(void)
         /* get cheat index */
         index = cheatIndexes[--cnt];
 
+        /* detect destination RAM */
+        switch ((cheatlist[index].address >> 20) & 0xf)
+        {
+            case 0x0: /* Mega-CD PRG-RAM (512 KB) */
+                base = scd.prg_ram;
+                mask = 0x7fffe;
+                break;
+
+            case 0x2: /* Mega-CD 2M Word-RAM (256 KB) */
+                base = scd.word_ram_2M;
+                mask = 0x3fffe;
+                break;
+
+            default: /* Work-RAM (64 KB) */
+                base = work_ram;
+                mask = 0xfffe;
+                break;
+        }
+
         /* apply RAM patch */
-        //if (cheatlist[index].data & 0xFF00)
-        //if (cheatlist[index].data & 0x00FF) // For LSB?
-        BOOL isSega8bit = [_current.systemIdentifier isEqualToString:@"openemu.system.gg"] || [_current.systemIdentifier isEqualToString:@"openemu.system.sms"] || [_current.systemIdentifier isEqualToString:@"openemu.system.sg1000"];
-        // TODO: Figure out why this is. Some PAR cheats for Genesis don't work otherwise.
-        if (isSega8bit ? cheatlist[index].data & 0xFF00 : cheatlist[index].data & 0x00FF)
+        if (cheatlist[index].data & 0xFF00)
         {
             /* word patch */
-            *(uint16_t *)(work_ram + (cheatlist[index].address & 0xFFFE)) = cheatlist[index].data;
+            *(uint16_t *)(base + (cheatlist[index].address & mask)) = cheatlist[index].data;
         }
         else
         {
             /* byte patch */
-            work_ram[cheatlist[index].address & 0xFFFF] = cheatlist[index].data;
+            mask |= 1;
+            base[cheatlist[index].address & mask] = cheatlist[index].data;
         }
     }
 }
@@ -1717,8 +1772,8 @@ void ROMCheatUpdate(void)
         /* get current banked ROM address */
         ptr = &z80_readmap[(cheatlist[index].address) >> 10][cheatlist[index].address & 0x03FF];
 
-        /* check if reference matches original ROM data */
-        if (((uint8_t)cheatlist[index].old) == *ptr)
+        /* check if reference exists and matches original ROM data */
+        if (!cheatlist[index].old || ((uint8_t)cheatlist[index].old) == *ptr)
         {
             /* patch data */
             *ptr = cheatlist[index].data;
