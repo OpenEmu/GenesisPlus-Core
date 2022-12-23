@@ -1732,7 +1732,7 @@ static void RAMCheatUpdate(void)
         // TODO: Investigate. Some PAR cheats for Genesis don't work otherwise.
         // e.g. Sonic The Hedgehog 2 (World) (Rev A).md (MD5 9feeb724052c39982d432a7851c98d3e) using Invincibility (Sonic only) code FFB02B:0002
         // Fixes possible endianness issue, also does not invoke pointer typecasting UB
-        bool isSega16bit = ((system_hw & SYSTEM_PBC) == SYSTEM_MD) || ((system_hw & SYSTEM_PBC) == SYSTEM_MCD);
+        bool isSega16bit = ((system_hw & SYSTEM_PBC) == SYSTEM_MD) || (system_hw == SYSTEM_MCD);
         //if (cheatlist[index].data & 0xFF00)
         if (isSega16bit ? cheatlist[index].data & 0x00FF : cheatlist[index].data & 0xFF00)
         {
