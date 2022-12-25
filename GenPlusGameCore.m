@@ -225,7 +225,7 @@ static __weak GenPlusGameCore *_current;
         system_frame_sms(0);
 
     int samples = audio_update(_soundBuffer);
-    [[self ringBufferAtIndex:0] write:_soundBuffer maxLength:samples << 2];
+    [[self audioBufferAtIndex:0] write:_soundBuffer maxLength:samples << 2];
 }
 
 - (void)resetEmulation
