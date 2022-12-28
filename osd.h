@@ -15,8 +15,6 @@ extern void ROMCheatUpdate(void);
 
 typedef struct
 {
-    int8 device;
-    uint8 port;
     uint8 padtype;
 } t_input_config;
 

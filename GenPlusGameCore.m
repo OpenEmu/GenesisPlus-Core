@@ -467,7 +467,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
 {
     if (_multiTapType == GamepadPort1TeamPlayerPort2 || cart.special & HW_J_CART)
     {
-        int offset = (player == 1) ? 0 : player + 2;
+        NSUInteger offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] |= GenesisMap[button];
     }
     else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
@@ -484,7 +484,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
 {
     if (_multiTapType == GamepadPort1TeamPlayerPort2 || cart.special & HW_J_CART)
     {
-        int offset = (player == 1) ? 0 : player + 2;
+        NSUInteger offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] &= ~GenesisMap[button];
     }
     else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
@@ -499,7 +499,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
 {
     if (_multiTapType == GamepadPort1TeamPlayerPort2)
     {
-        int offset = (player == 1) ? 0 : player + 2;
+        NSUInteger offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] |= GenesisMap[button];
     }
     else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
@@ -514,7 +514,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
 {
     if (_multiTapType == GamepadPort1TeamPlayerPort2)
     {
-        int offset = (player == 1) ? 0 : player + 2;
+        NSUInteger offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] &= ~GenesisMap[button];
     }
     else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
@@ -1057,6 +1057,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
             int port = 1; // Port 2
             input.system[0] = SYSTEM_GAMEPAD;
             input.system[1] = SYSTEM_TEAMPLAYER;
+            config.input[0].padtype = pad;
             for (int i = 0; i < 4; i++)
             {
                 config.input[port*4 + i].padtype = pad;
