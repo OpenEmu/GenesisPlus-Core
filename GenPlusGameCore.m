@@ -470,7 +470,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
         NSUInteger offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] |= GenesisMap[button];
     }
-    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
+    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2 || _multiTapType == EA4WayPlay)
     {
         input.pad[player-1] |= GenesisMap[button];
     }
@@ -487,7 +487,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
         NSUInteger offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] &= ~GenesisMap[button];
     }
-    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
+    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2 || _multiTapType == EA4WayPlay)
     {
         input.pad[player-1] &= ~GenesisMap[button];
     }
@@ -502,7 +502,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
         NSUInteger offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] |= GenesisMap[button];
     }
-    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
+    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2 || _multiTapType == EA4WayPlay)
     {
         input.pad[player-1] |= GenesisMap[button];
     }
@@ -517,7 +517,7 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
         NSUInteger offset = (player == 1) ? 0 : player + 2;
         input.pad[offset] &= ~GenesisMap[button];
     }
-    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2)
+    else if (_multiTapType == TeamPlayerPort1 || _multiTapType == TeamPlayerPort1TeamPlayerPort2 || _multiTapType == EA4WayPlay)
     {
         input.pad[player-1] &= ~GenesisMap[button];
     }
