@@ -999,7 +999,6 @@ static void mapper_sega_w(uint32 data)
     if (sram.on)
     {
       /* Backup RAM mapped to $200000-$20ffff (normally mirrored up to $3fffff but this breaks Sonic Megamix and no game need it) */
-      m68k.memory_map[0x20].base    = sram.sram;
       m68k.memory_map[0x20].read8   = sram_read_byte;
       m68k.memory_map[0x20].read16  = sram_read_word;
       zbank_memory_map[0x20].read   = sram_read_byte;
@@ -1031,17 +1030,13 @@ static void mapper_sega_w(uint32 data)
   }
   else
   {
-    /* cartridge ROM mapped to $200000-$3fffff */
-    for (i=0x20; i<0x40; i++)
-    {
-      m68k.memory_map[i].base     = cart.rom + ((i<<16) & cart.mask);
-      m68k.memory_map[i].read8    = NULL;
-      m68k.memory_map[i].read16   = NULL;
-      zbank_memory_map[i].read    = NULL;
-      m68k.memory_map[i].write8   = m68k_unused_8_w;
-      m68k.memory_map[i].write16  = m68k_unused_16_w;
-      zbank_memory_map[i].write   = zbank_unused_w;
-    }
+    /* cartridge ROM mapped to $200000-$20ffff */
+    m68k.memory_map[0x20].read8   = NULL;
+    m68k.memory_map[0x20].read16  = NULL;
+    zbank_memory_map[0x20].read   = NULL;
+    m68k.memory_map[0x20].write8  = m68k_unused_8_w;
+    m68k.memory_map[0x20].write16 = m68k_unused_16_w;
+    zbank_memory_map[0x20].write  = zbank_unused_w;
   }
 }
 
@@ -1659,7 +1654,7 @@ static void mapper_realtec_w(uint32 address, uint32 data)
     {
       /* ROM access enable */
       /* when bit 0 is set, ROM A17/A16 pins are set according to above registers and ROM A15/A12 pins are connected to VA16-VA13 (forced to 1 on reset) */
-      /* other bits habe no effect */
+      /* other bits have no effect */
       if (data & 0x01)
       {
         /* once ROM access is enabled, ROM mapping can not be modified until next reset */
@@ -2030,6 +2025,10 @@ static void default_time_w(uint32 address, uint32 data)
   if (address < 0xa13060)
   {
     mapper_64k_multi_w(address);
+
+    /* cartridge ROM mapping is reinitialized on /VRES */
+    cart.hw.bankshift = 1;
+
     return;
   }
 
