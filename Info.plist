@@ -49,6 +49,8 @@
 			<integer>0</integer>
 			<key>OEGameCoreSupportsCheatCode</key>
 			<true/>
+			<key>OEGameCoreSupportsDisplayModeChange</key>
+			<true/>
 			<key>OEGameCoreSupportsRewinding</key>
 			<true/>
 			<key>OERequiredFiles</key>
@@ -93,6 +95,8 @@
 			<integer>0</integer>
 			<key>OEGameCoreSupportsCheatCode</key>
 			<true/>
+			<key>OEGameCoreSupportsDisplayModeChange</key>
+			<true/>
 			<key>OEGameCoreSupportsRewinding</key>
 			<true/>
 		</dict>
@@ -104,6 +108,8 @@
 			<integer>0</integer>
 			<key>OEGameCoreSupportsCheatCode</key>
 			<true/>
+			<key>OEGameCoreSupportsDisplayModeChange</key>
+			<true/>
 			<key>OEGameCoreSupportsRewinding</key>
 			<true/>
 		</dict>
@@ -114,6 +120,8 @@
 			<key>OEGameCoreRewindInterval</key>
 			<integer>0</integer>
 			<key>OEGameCoreSupportsCheatCode</key>
+			<true/>
+			<key>OEGameCoreSupportsDisplayModeChange</key>
 			<true/>
 			<key>OEGameCoreSupportsRewinding</key>
 			<true/>

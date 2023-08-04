@@ -691,18 +691,30 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
 
 - (NSArray <NSDictionary <NSString *, id> *> *)displayModes
 {
-    if (![self.systemIdentifier isEqualToString:@"openemu.system.gg"])
-        return nil;
-
     if (_availableDisplayModes.count == 0)
     {
         _availableDisplayModes = [NSMutableArray array];
 
-        NSArray <NSDictionary <NSString *, id> *> *availableModesWithDefault =
-        @[
-          Label(@"Screen"),
-          OptionToggleable(@"LCD Ghosting", @"ggLCDFilter"),
-          ];
+        NSArray <NSDictionary <NSString *, id> *> *availableModesWithDefault;
+        
+        if (![self.systemIdentifier isEqualToString:@"openemu.system.gg"]) {
+            availableModesWithDefault = @[
+                Label(@"VDP Mode"),
+                OptionDefault(@"Auto", @"vdpMode"),
+                Option(@"PAL", @"vdpMode"),
+                Option(@"NTSC", @"vdpMode"),
+                ];
+        } else {
+            availableModesWithDefault = @[
+                Label(@"Screen"),
+                OptionToggleable(@"LCD Ghosting", @"ggLCDFilter"),
+                SeparatorItem(),
+                Label(@"VDP Mode"),
+                OptionDefault(@"Auto", @"vdpMode"),
+                Option(@"PAL", @"vdpMode"),
+                Option(@"NTSC", @"vdpMode"),
+                ];
+        }
 
         // Deep mutable copy
         _availableDisplayModes = (NSMutableArray *)CFBridgingRelease(CFPropertyListCreateDeepCopy(kCFAllocatorDefault, (CFArrayRef)availableModesWithDefault, kCFPropertyListMutableContainers));
@@ -762,6 +774,33 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
             config.lcd = (uint8)(0.80 * 256);
         else
             config.lcd = 0;
+    }
+    if ([displayMode isEqualToString:@"Auto"]) {
+        config.vdp_mode = 0;
+        vdp_pal = (region_code >> 6) & 0x01;
+        system_clock = vdp_pal ? MCLOCK_PAL : MCLOCK_NTSC;
+        audio_init(48000, vdp_pal ? pal_fps : ntsc_fps);
+    }
+    if ([displayMode isEqualToString:@"PAL"]) {
+        config.vdp_mode = 2;
+        vdp_pal = 1;
+        system_clock = vdp_pal ? MCLOCK_PAL : MCLOCK_NTSC;
+        audio_init(48000, vdp_pal ? pal_fps : ntsc_fps);
+    }
+    if ([displayMode isEqualToString:@"NTSC"]) {
+        config.vdp_mode = 1;
+        vdp_pal = 0;
+        system_clock = vdp_pal ? MCLOCK_PAL : MCLOCK_NTSC;
+        audio_init(48000, vdp_pal ? pal_fps : ntsc_fps);
+    }
+}
+
+- (void)loadDisplayModeWithOptions {
+    if (![self respondsToSelector:@selector(displayModeInfo)]) return;
+    // Restore vdp mode
+    NSString *vdpMode = self.displayModeInfo[@"vdpMode"];
+    if (vdpMode && ![vdpMode isEqualToString:@"Auto"]) {
+        [self changeDisplayWithMode:vdpMode];
     }
 }
 
@@ -849,6 +888,8 @@ const int MasterSystemMap[] = {INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, IN
     }
     else
         config.lcd  = 0;
+    
+    [self loadDisplayModeWithOptions];
 
     config.render   = 0; /* 1 = double resolution output (only when interlaced mode 2 is enabled) */
     config.enhanced_vscroll = 0;
