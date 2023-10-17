@@ -637,7 +637,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = /usr/bin/openemu_rb_automation.rb;
+			shellScript = "/usr/bin/openemu_rb_automation.rb\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
